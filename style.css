@@ -254,3 +254,122 @@ body:has(#adminView:not(.hidden)) #stepsRow { display: none; }
     *, *::before, *::after { animation: none !important; transition: none !important; }
     .reveal { opacity: 1; }
 }
+
+/* ============================================================
+   v3 : finitions « hyper beau »
+   ============================================================ */
+
+/* ---------- Fond : rayon de lumière + vignette + halo qui suit la souris ---------- */
+.aurora::after {
+    content: ''; position: absolute; left: 50%; top: -1px; width: min(900px, 90%); height: 1px;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, transparent, rgba(165, 180, 252, 0.9), rgba(244, 114, 182, 0.7), transparent);
+    box-shadow: 0 0 60px 8px rgba(129, 140, 248, 0.35);
+}
+.aurora::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgba(3, 5, 12, 0.7) 100%);
+}
+.cursor-aura {
+    position: fixed; top: 0; left: 0; width: 560px; height: 560px; margin: -280px 0 0 -280px;
+    border-radius: 50%; pointer-events: none; z-index: 0; will-change: transform;
+    background: radial-gradient(circle, rgba(129, 140, 248, 0.11), rgba(236, 72, 153, 0.04) 45%, transparent 70%);
+}
+
+/* ---------- Emblème du hero (l'élément mémorable de la page) ---------- */
+.emblem { position: relative; width: 132px; height: 132px; margin: 0 auto 1.9rem; display: grid; place-items: center; }
+.emblem .ring { position: absolute; border-radius: 50%; border: 1px solid rgba(165, 180, 252, 0.28); inset: 0; }
+.emblem .ring.r2 { inset: -20px; border-color: rgba(244, 114, 182, 0.18); }
+.emblem .orbit { position: absolute; inset: 0; border-radius: 50%; animation: orbit 14s linear infinite; }
+.emblem .orbit.o-b { inset: -20px; animation-duration: 23s; animation-direction: reverse; }
+.emblem .orbit::after {
+    content: ''; position: absolute; top: -4px; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%;
+    background: #a5b4fc; box-shadow: 0 0 14px 3px rgba(165, 180, 252, 0.85);
+}
+.emblem .orbit.o-b::after { background: #f9a8d4; box-shadow: 0 0 14px 3px rgba(249, 168, 212, 0.8); }
+.emblem .core {
+    position: relative; width: 80px; height: 80px; border-radius: 27px; display: grid; place-items: center;
+    font-size: 1.95rem; color: #fff; transform: rotate(-6deg);
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 58%, #ec4899 120%);
+    box-shadow: 0 22px 54px -12px rgba(139, 92, 246, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -8px 18px rgba(0, 0, 0, 0.18);
+    animation: bob 6s ease-in-out infinite;
+}
+.emblem .core::after {
+    content: ''; position: absolute; inset: 0; border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 45%);
+}
+@keyframes orbit { to { transform: rotate(360deg); } }
+@keyframes bob {
+    0%, 100% { transform: rotate(-6deg) translateY(0); }
+    50% { transform: rotate(-3deg) translateY(-7px); }
+}
+
+/* Pastilles sous le titre */
+.chip {
+    display: inline-flex; align-items: center; gap: .5rem; padding: .45rem .9rem; border-radius: 9999px;
+    font-size: .8rem; color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.09);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.chip i { color: #a5b4fc; font-size: .75rem; }
+
+/* ---------- Typo / en-tête ---------- */
+label { letter-spacing: 0; }
+header .glass { border-radius: 1.1rem; }
+
+/* ---------- Formulaires : champs plus généreux ---------- */
+#authForm .input-field, #modForm .input-field {
+    border-radius: .95rem; padding-top: .9rem; padding-bottom: .9rem;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+#authForm .input-field:focus, #modForm .input-field:focus {
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.16), 0 10px 34px -10px rgba(99, 102, 241, 0.55), inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+#authForm .input-icon, #modForm .input-icon { padding-left: 1rem; }
+#authSubmitBtn, #submitFormBtn { border-radius: 1rem; font-size: .95rem; letter-spacing: .01em; }
+
+/* Bandeaux « base de données » (classes posées par script.js) */
+[data-db-notice] { border-radius: 1rem; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+
+/* ---------- Étapes ---------- */
+.step-card { border-radius: 1.15rem; }
+.step-num { border-radius: .95rem; }
+
+/* ---------- Admin ---------- */
+#tabAppsBtn, #tabUsersBtn { border-radius: 9999px; padding: .55rem 1.1rem; }
+#tabAppsBtn[class*="indigo-500/25"], #tabUsersBtn[class*="indigo-500/25"] {
+    color: #fff; border-color: rgba(165, 180, 252, 0.55);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.45), rgba(168, 85, 247, 0.32));
+    box-shadow: 0 10px 28px -12px rgba(99, 102, 241, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+#applicationsGrid > .glass, #usersGrid > .glass { position: relative; overflow: hidden; border-radius: 1.2rem; }
+#applicationsGrid > .glass { padding: 1.5rem 1.6rem 1.4rem 1.8rem; }
+#applicationsGrid > .glass::before, #usersGrid > .glass::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: linear-gradient(180deg, #6366f1, #a855f7 60%, #ec4899);
+}
+#applicationsGrid h3 { font-size: 1.2rem; }
+#applicationsGrid .uppercase, #usersGrid .uppercase {
+    text-transform: none; letter-spacing: 0; font-size: .78rem; color: #a5b4fc; font-weight: 600;
+}
+#applicationsGrid .font-mono {
+    background: rgba(99, 102, 241, 0.14); border-color: rgba(129, 140, 248, 0.4); color: #c7d2fe;
+    letter-spacing: .12em;
+}
+#applicationsGrid button[data-action], #usersGrid button[data-action] { border-radius: .8rem; }
+
+/* ---------- Fenêtres (modales) ---------- */
+#modalUniqueCode { filter: drop-shadow(0 0 18px rgba(165, 180, 252, 0.5)); }
+#modalContent, #successModal .glass, #adminLoginModal .glass { border-radius: 1.75rem; }
+
+/* ---------- Pied de page ---------- */
+footer { position: relative; padding-top: 1.4rem; }
+footer::before {
+    content: ''; position: absolute; top: 0; left: 50%; width: 140px; height: 1px; transform: translateX(-50%);
+    background: linear-gradient(90deg, transparent, rgba(129, 140, 248, 0.6), transparent);
+}
+
+@media (max-width: 639px) {
+    .emblem { width: 108px; height: 108px; }
+    .emblem .core { width: 68px; height: 68px; border-radius: 22px; font-size: 1.6rem; }
+}
