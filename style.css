@@ -468,7 +468,7 @@ footer::before {
     border: 1px solid rgba(255, 255, 255, 0.09);
 }
 .mini-profile { display: flex; align-items: center; gap: .9rem; min-width: 0; }
-.progress { flex: 1 1 200px; min-width: 0; }
+.progress { flex: 1 1 100%; min-width: 0; }
 .progress-top { display: flex; justify-content: space-between; margin-bottom: .5rem; font-size: .78rem; color: #94a3b8; font-weight: 500; }
 #progressPct { color: #e0e7ff; font-weight: 700; font-variant-numeric: tabular-nums; }
 .progress-track { height: 8px; border-radius: 9999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
@@ -504,3 +504,50 @@ footer::before {
 
 /* ---------- Étoiles ---------- */
 .starfield { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+
+/* ============================================================
+   v5 : suivi du dossier (lu + commentaire) et lisibilité
+   ============================================================ */
+.status-chip {
+    display: inline-flex; align-items: center; gap: .45rem; padding: .3rem .75rem; border-radius: 9999px;
+    font-size: .76rem; font-weight: 600; line-height: 1.2; white-space: nowrap;
+    color: #cbd5e1; background: rgba(148, 163, 184, 0.12); border: 1px solid rgba(148, 163, 184, 0.3);
+}
+.status-chip.is-sent { color: #c7d2fe; background: rgba(99, 102, 241, 0.16); border-color: rgba(129, 140, 248, 0.45); }
+.status-chip.is-read { color: #6ee7b7; background: rgba(52, 211, 153, 0.13); border-color: rgba(52, 211, 153, 0.45); }
+
+/* Panneau « Mon dossier » (côté candidat) */
+.my-app {
+    margin-bottom: 1.6rem; padding: 1.2rem 1.35rem; border-radius: 1.2rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.13), rgba(255, 255, 255, 0.02));
+    border: 1px solid rgba(255, 255, 255, 0.11);
+}
+.my-app.is-read { border-color: rgba(52, 211, 153, 0.4); }
+.my-app-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .7rem 1rem; }
+.my-app-title { display: inline-flex; align-items: center; gap: .6rem; font-family: 'Sora', 'Inter', sans-serif; font-weight: 700; font-size: 1.05rem; color: #fff; }
+.my-app-title i { color: #a5b4fc; }
+.my-app-meta { display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; margin-top: .85rem; font-size: .84rem; line-height: 1.5; color: #94a3b8; }
+.my-app-meta b { margin-left: .25rem; color: #e0e7ff; letter-spacing: .14em; }
+.admin-note {
+    margin-top: 1.05rem; padding: 1rem 1.15rem; border-radius: 1rem;
+    background: rgba(236, 72, 153, 0.09); border: 1px solid rgba(244, 114, 182, 0.32);
+}
+.admin-note-label { display: flex; align-items: center; gap: .55rem; margin-bottom: .55rem; font-size: .8rem; font-weight: 600; color: #f9a8d4; }
+.admin-note p { font-size: .94rem; line-height: 1.65; color: #f1f5f9; white-space: pre-wrap; overflow-wrap: anywhere; }
+.admin-note small { display: block; margin-top: .7rem; font-size: .74rem; color: #94a3b8; }
+
+/* Commentaire dans l'espace admin */
+.comment-box { padding-top: .25rem; }
+.field-label { display: flex; align-items: center; gap: .55rem; margin-bottom: .55rem; font-size: .8rem; font-weight: 600; color: #a5b4fc; }
+.comment-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .7rem 1rem; margin-top: .7rem; }
+.btn-soft {
+    padding: .55rem 1rem; border-radius: .8rem; font-size: .78rem; font-weight: 600; cursor: pointer; color: #e0e7ff;
+    background: rgba(99, 102, 241, 0.25); border: 1px solid rgba(129, 140, 248, 0.5); transition: background .2s ease, transform .2s ease;
+}
+.btn-soft:hover { background: rgba(99, 102, 241, 0.42); transform: translateY(-1px); }
+.btn-soft:disabled { opacity: .7; cursor: wait; transform: none; }
+
+/* Textes longs : jamais collés ni coupés */
+#applicationsGrid p { overflow-wrap: anywhere; line-height: 1.6; }
+#applicationsGrid .grid > div + div, #applicationsGrid .grid { gap: 1.1rem; }
+#applicationsGrid .flex.flex-wrap.justify-between { row-gap: .75rem; }

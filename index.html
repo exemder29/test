@@ -227,14 +227,23 @@
                 </button>
             </div>
 
-            <div class="dossier-strip" id="dossierStrip">
-                <div class="mini-profile">
-                    <div class="pc-avatar sm"><i class="fa-solid fa-shield-halved"></i><span class="pc-status"></span></div>
-                    <div class="leading-tight min-w-0">
-                        <div class="pc-name sm" data-preview-from="pseudo" data-preview-fallback="Ton pseudo">Ton pseudo</div>
-                        <span class="role-pill"><i class="fa-solid fa-shield-halved"></i> Modérateur</span>
-                    </div>
+            <div id="myAppPanel" class="my-app hidden" aria-live="polite">
+                <div class="my-app-head">
+                    <span class="my-app-title"><i class="fa-regular fa-folder-open"></i> Mon dossier</span>
+                    <span id="myAppStatus" class="status-chip is-sent"></span>
                 </div>
+                <div class="my-app-meta">
+                    <span>Code unique : <b id="myAppCode" class="font-mono"></b></span>
+                    <span id="myAppDate"></span>
+                </div>
+                <div id="myAppComment" class="admin-note hidden">
+                    <div class="admin-note-label"><i class="fa-solid fa-comment-dots"></i> Message de l'équipe</div>
+                    <p id="myAppCommentText"></p>
+                    <small id="myAppCommentDate"></small>
+                </div>
+            </div>
+
+            <div class="dossier-strip" id="dossierStrip">
                 <div class="progress">
                     <div class="progress-top"><span id="progressLabel">Dossier à remplir</span><span id="progressPct">0 %</span></div>
                     <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressTrack"><div id="progressBar"></div></div>
