@@ -1,0 +1,178 @@
+/* ============================================================
+   Candidature Modérateur : thème "Aurora Glass 2.0"
+   ============================================================ */
+:root {
+    --bg: #070a14;
+    --surface: rgba(15, 20, 36, 0.72);
+    --border: rgba(255, 255, 255, 0.09);
+    --primary: #6366f1;
+    --primary-2: #8b5cf6;
+    --accent: #ec4899;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4 { font-family: 'Poppins', sans-serif; }
+
+/* ---------- Fond aurore animé ---------- */
+.aurora {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+    background:
+        radial-gradient(ellipse 80% 60% at 10% 0%, rgba(99, 102, 241, 0.25), transparent 60%),
+        radial-gradient(ellipse 70% 50% at 95% 10%, rgba(236, 72, 153, 0.18), transparent 60%),
+        radial-gradient(ellipse 60% 50% at 50% 110%, rgba(139, 92, 246, 0.22), transparent 60%);
+}
+.aurora .orb {
+    position: absolute; border-radius: 9999px; filter: blur(90px); opacity: 0.45;
+    animation: floaty 18s ease-in-out infinite;
+}
+.aurora .orb.o1 { width: 360px; height: 360px; background: #4f46e5; top: 6%; left: -80px; }
+.aurora .orb.o2 { width: 320px; height: 320px; background: #db2777; top: 40%; right: -90px; animation-delay: -6s; }
+.aurora .orb.o3 { width: 300px; height: 300px; background: #7c3aed; bottom: -60px; left: 30%; animation-delay: -11s; }
+.grid-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.45;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 100%);
+            mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 100%);
+}
+@keyframes floaty {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(40px, -30px) scale(1.08); }
+    66% { transform: translate(-30px, 30px) scale(0.95); }
+}
+
+/* ---------- Verre ---------- */
+.glass {
+    background: var(--surface);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid var(--border);
+    box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Cartes principales : bordure dégradée subtile */
+.card-main { position: relative; }
+.card-main::after {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+    background: linear-gradient(145deg, rgba(129,140,248,0.6), rgba(255,255,255,0.05) 40%, rgba(236,72,153,0.4));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+}
+
+/* ---------- Texte dégradé ---------- */
+.text-gradient {
+    background: linear-gradient(120deg, #a5b4fc 0%, #c4b5fd 40%, #f9a8d4 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.shimmer-text {
+    background: linear-gradient(110deg, #e2e8f0 30%, #a5b4fc 45%, #f9a8d4 55%, #e2e8f0 70%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shimmer 6s linear infinite;
+}
+@keyframes shimmer { to { background-position: -220% 0; } }
+
+/* ---------- Champs ---------- */
+.input-field {
+    background: rgba(8, 12, 26, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    transition: border-color .25s ease, box-shadow .25s ease, background .25s ease, transform .25s ease;
+}
+.input-field:hover { border-color: rgba(148, 163, 184, 0.4); }
+.input-field:focus {
+    outline: none;
+    border-color: #818cf8;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2), 0 8px 30px -8px rgba(99, 102, 241, 0.5);
+    background: rgba(8, 12, 26, 0.95);
+}
+.input-wrap:focus-within > .input-icon { color: #a5b4fc; }
+.input-icon { transition: color .25s ease; }
+
+/* Bouton bascule mot de passe (œil) */
+.password-toggle-btn {
+    user-select: none;
+}
+.password-toggle-btn:hover {
+    transform: scale(1.1);
+}
+
+/* ---------- Boutons ---------- */
+.btn-glow {
+    position: relative; overflow: hidden; z-index: 1;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #db2777 120%);
+    background-size: 160% 160%; background-position: 0% 50%;
+    transition: transform .3s ease, box-shadow .3s ease, background-position .6s ease;
+    box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.7);
+}
+.btn-glow::before {
+    content: ''; position: absolute; top: 0; left: -120%; width: 80%; height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.4), transparent);
+    transform: skewX(-20deg); transition: left .7s ease; z-index: -1;
+}
+.btn-glow:hover { transform: translateY(-2px); background-position: 100% 50%; box-shadow: 0 16px 38px -10px rgba(139, 92, 246, 0.85); }
+.btn-glow:hover::before { left: 140%; }
+.btn-glow:active { transform: translateY(0) scale(0.99); }
+.btn-glow:disabled { opacity: .65; cursor: wait; transform: none; }
+
+/* ---------- Étapes ---------- */
+.step-card { transition: transform .3s ease, border-color .3s ease, background .3s ease; }
+.step-card:hover { transform: translateY(-4px); border-color: rgba(129, 140, 248, 0.5); background: rgba(99, 102, 241, 0.1); }
+.step-num {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    box-shadow: 0 8px 20px -6px rgba(99, 102, 241, 0.8);
+}
+
+/* ---------- Pastilles ---------- */
+.pulse-dot { position: relative; }
+.pulse-dot::after {
+    content: ''; position: absolute; inset: -3px; border-radius: 9999px;
+    background: inherit; opacity: .45; animation: ping 2s cubic-bezier(0, 0, .2, 1) infinite;
+}
+@keyframes ping { 75%, 100% { transform: scale(2.2); opacity: 0; } }
+
+/* ---------- Admin ---------- */
+#applicationsGrid > .glass, #usersGrid > .glass {
+    transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+#applicationsGrid > .glass:hover, #usersGrid > .glass:hover {
+    transform: translateY(-2px); border-color: rgba(129, 140, 248, 0.4);
+    box-shadow: 0 20px 40px -18px rgba(99, 102, 241, 0.5);
+}
+
+body:has(#adminView:not(.hidden)) #hero { display: none; }
+body:has(#adminView:not(.hidden)) #stepsRow { display: none; }
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
+::selection { background: rgba(129, 140, 248, 0.4); }
+
+/* ---------- Animations ---------- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(18px) scale(.99); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-fade-in { animation: fadeIn .55s cubic-bezier(.2, .7, .2, 1) forwards; }
+.reveal { opacity: 0; animation: fadeIn .7s cubic-bezier(.2, .7, .2, 1) forwards; }
+.d1 { animation-delay: .08s; } .d2 { animation-delay: .16s; } .d3 { animation-delay: .24s; } .d4 { animation-delay: .32s; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1; }
+}
