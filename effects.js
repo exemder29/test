@@ -138,6 +138,97 @@
         }).observe(okModal, { attributes: true, attributeFilter: ['class'] });
     }
 
+
+    /* ---------- Aperçu du badge : le pseudo tapé apparaît en direct ---------- */
+    document.querySelectorAll('[data-preview-from]').forEach(function (out) {
+        var src = document.getElementById(out.getAttribute('data-preview-from'));
+        if (!src) return;
+        var fallback = out.getAttribute('data-preview-fallback') || '';
+        var update = function () {
+            var v = src.value.trim();
+            out.textContent = v || fallback;
+            out.classList.toggle('is-placeholder', !v);
+        };
+        src.addEventListener('input', update);
+        var f = src.form;
+        if (f) f.addEventListener('reset', function () { setTimeout(update, 0); });
+        update();
+    });
+
+    /* ---------- Formulaire : coches vertes + progression du dossier ---------- */
+    (function () {
+        var form = document.getElementById('modForm');
+        var strip = document.getElementById('dossierStrip');
+        if (!form || !strip) return;
+        var bar = document.getElementById('progressBar'), pct = document.getElementById('progressPct');
+        var label = document.getElementById('progressLabel'), track = document.getElementById('progressTrack');
+        var submit = document.getElementById('submitFormBtn');
+        // poids : champs courts = rempli ; textareas = on récompense un texte un peu développé
+        var fields = [
+            { el: document.getElementById('pseudo'), full: 2 },
+            { el: document.getElementById('playtime'), full: 3 },
+            { el: document.getElementById('motivations'), full: 60 },
+            { el: document.getElementById('experience'), full: 40 }
+        ].filter(function (f) { return f.el; });
+
+        function refresh() {
+            var total = 0;
+            fields.forEach(function (f) {
+                var n = f.el.value.trim().length;
+                var wrap = f.el.closest('.input-wrap');
+                if (wrap) wrap.classList.toggle('filled', n > 0);
+                total += Math.min(n / f.full, 1);
+            });
+            var p = Math.round(total / fields.length * 100);
+            bar.style.width = p + '%';
+            pct.textContent = p + ' %';
+            track.setAttribute('aria-valuenow', p);
+            var ready = p >= 100;
+            strip.classList.toggle('is-ready', ready);
+            if (submit) submit.classList.toggle('ready', ready);
+            label.textContent = ready ? 'Prêt à envoyer' : (p === 0 ? 'Dossier à remplir' : 'Dossier en cours');
+        }
+        fields.forEach(function (f) { f.el.addEventListener('input', refresh); });
+        form.addEventListener('reset', function () { setTimeout(refresh, 0); });
+        refresh();
+    })();
+
+    /* ---------- Ciel étoilé discret ---------- */
+    if (!reduced) {
+        var sky = document.createElement('canvas');
+        sky.className = 'starfield';
+        sky.setAttribute('aria-hidden', 'true');
+        document.body.insertBefore(sky, document.body.firstChild);
+        var sctx = sky.getContext('2d'), stars = [], SW = 0, SH = 0, sdpr = Math.min(window.devicePixelRatio || 1, 2);
+        var seed = function () {
+            SW = sky.width = window.innerWidth * sdpr; SH = sky.height = window.innerHeight * sdpr;
+            var count = Math.round(Math.min(110, window.innerWidth / 11));
+            stars = [];
+            for (var i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * SW, y: Math.random() * SH,
+                    r: (0.4 + Math.random() * 1.2) * sdpr, ph: Math.random() * 6.28,
+                    sp: 0.4 + Math.random() * 1.1, dy: (0.02 + Math.random() * 0.06) * sdpr,
+                    pink: Math.random() < 0.22
+                });
+            }
+        };
+        seed();
+        window.addEventListener('resize', seed);
+        (function twinkle(t) {
+            sctx.clearRect(0, 0, SW, SH);
+            for (var i = 0; i < stars.length; i++) {
+                var s = stars[i];
+                s.y -= s.dy; if (s.y < -4) { s.y = SH + 4; s.x = Math.random() * SW; }
+                var a = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(t / 1000 * s.sp + s.ph));
+                sctx.globalAlpha = a;
+                sctx.fillStyle = s.pink ? '#f9a8d4' : '#c7d2fe';
+                sctx.beginPath(); sctx.arc(s.x, s.y, s.r, 0, 6.2832); sctx.fill();
+            }
+            requestAnimationFrame(twinkle);
+        })(0);
+    }
+
     /* ---------- Halo qui suit la souris sur les cartes ---------- */
     document.addEventListener('pointermove', function (e) {
         var t = e.target;
