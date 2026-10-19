@@ -40,13 +40,14 @@ const DB_KEYS = {
 const APP_ID = 'mod-app-v3';
 const FIREBASE_VERSIONS = ['13.0.0', '11.6.1'];
 const ADMIN_PIN = 'EZ85//';
+// Copie locale des comptes déjà connus : permet de se connecter même si la base est coupée plus tard
 const USER_CACHE_KEY = 'mod_users_cache_v3';
 
 // ---------- État de la base en ligne ----------
-let fb = null;                 
-let useCloudDB = false;        
+let fb = null;                 // { db, fs, version }
+let useCloudDB = false;        // true quand TOUTES les collections répondent
 let cloudOk = { applications: false, users: false, retries: false };
-let dbIssue = null;            
+let dbIssue = null;            // message d'erreur affiché dans l'admin
 let unsubs = [];
 let liveApps = [];
 let liveUsers = [];
@@ -70,6 +71,7 @@ function escapeHtml(text) {
         .replace(/'/g, "&#039;");
 }
 
+// Identifiant de document Firestore dérivé d'un pseudo (insensible à la casse)
 function keyOf(name) {
     return encodeURIComponent(String(name || '').trim().toLowerCase()).replace(/\./g, '%2E');
 }
@@ -78,6 +80,7 @@ function formatDate(iso) {
     return iso ? new Date(iso).toLocaleString('fr-FR') : '';
 }
 
+// Une écriture Firestore qui ne reçoit jamais de réponse ne doit pas bloquer l'interface
 function withTimeout(promise, ms) {
     let timer;
     const timeout = new Promise((_, reject) => {
@@ -86,6 +89,7 @@ function withTimeout(promise, ms) {
     return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
+// SHA-256 en JavaScript pur (pas de dépendance au contexte sécurisé du navigateur)
 function sha256Hex(message) {
     const K = [
         0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
@@ -141,10 +145,10 @@ function hashPassword(password) {
 
 function passwordMatches(user, password) {
     if (user.passwordHash) return user.passwordHash === hashPassword(password);
-    return user.password === password;
+    return user.password === password; // anciens comptes locaux (migrés ensuite)
 }
 
-// ---------- Firebase ----------
+// ---------- Firebase : chargement et connexion ----------
 function cloudDoc(name, id) {
     return fb.fs.doc(fb.db, 'artifacts', APP_ID, 'public', 'data', name, id);
 }
@@ -159,16 +163,16 @@ function explainCloudError(err) {
         return 'La base ne répond pas (délai dépassé). Vérifie dans la console Firebase que Firestore est créé et que les règles du fichier firestore.rules sont publiées, puis clique sur « Reconnecter la base ».';
     }
     if (/permission-denied|insufficient permissions/i.test(code + ' ' + msg)) {
-        return 'Firestore refuse l\'accès (permission-denied). Dans la console Firebase : Firestore Database → onglet « Règles », colle le contenu du fichier firestore.rules puis clique sur « Publier ».';
+        return 'Firestore refuse l\'accès (permission-denied). Dans la console Firebase : Firestore Database → onglet « Règles », colle le contenu du fichier firestore.rules puis clique sur « Publier ». (Les règles en « mode test » expirent après 30 jours.)';
     }
     if (/configuration-not-found/i.test(code + ' ' + msg)) {
-        return 'Firebase Authentication n\'est pas activé sur ce projet. Console Firebase : Authentication → clique sur « Commencer », puis Sign-in method → active « Anonyme » → Enregistrer.';
+        return 'Firebase Authentication n\'est pas activé sur ce projet. Console Firebase : Authentication → clique sur « Commencer », puis Sign-in method → active « Anonyme » → Enregistrer. Recharge ensuite la page.';
     }
     if (/operation-not-allowed|admin-restricted-operation/i.test(code + ' ' + msg)) {
         return 'La connexion anonyme est désactivée. Console Firebase : Authentication → Sign-in method → active « Anonyme ».';
     }
     if (/not-found|unavailable|failed-precondition|database.*(not|does)/i.test(code + ' ' + msg)) {
-        return 'Firestore est injoignable (' + code + ').';
+        return 'Firestore est injoignable (' + code + '). Causes possibles : la base n\'est pas créée (console Firebase → Firestore Database → « Créer une base de données »), ou une extension / un bloqueur de publicités / un pare-feu bloque firestore.googleapis.com sur ce navigateur (essaie en navigation privée sans extensions). Clique ensuite sur « Reconnecter la base ».';
     }
     return 'Erreur Firebase (' + code + ') : ' + msg;
 }
@@ -191,6 +195,7 @@ function setDbStatus(state) {
     renderDbIssue();
 }
 
+// Bandeaux "base de données" affichés au-dessus de la connexion et du formulaire
 function renderDbNotice(state) {
     const views = {
         connecting: {
@@ -244,6 +249,7 @@ function renderDbIssue() {
 
 async function loadFirebaseSdk() {
     let lastErr;
+    // 1) Le SDK est déjà en train de se charger depuis index.html : on le réutilise (pas de 2e téléchargement)
     if (window.firebasePreload) {
         try {
             return await withTimeout(window.firebasePreload, 12000);
@@ -252,6 +258,7 @@ async function loadFirebaseSdk() {
             console.warn('Préchargement Firebase indisponible, nouvel essai :', e);
         }
     }
+    // 2) Secours : chargement direct, version par version
     for (const v of FIREBASE_VERSIONS) {
         try {
             const base = 'https://www.gstatic.com/firebasejs/' + v + '/';
@@ -269,11 +276,12 @@ async function loadFirebaseSdk() {
     throw lastErr || new Error('Impossible de charger le SDK Firebase');
 }
 
+// Écoute une collection en temps réel ; résout true au 1er envoi de données
 function listen(name, onData) {
     return new Promise(resolve => {
         let first = true;
         const unsub = fb.fs.onSnapshot(cloudCol(name), { includeMetadataChanges: true }, snap => {
-            if (snap.metadata.fromCache && first) return; 
+            if (snap.metadata.fromCache && first) return; // pas encore de réponse du serveur
             onData(snap);
             cloudOk[name] = true;
             if (first) { first = false; resolve(true); }
@@ -312,20 +320,23 @@ async function initFirebase() {
 
         setDbStatus('connecting');
         const sdk = await loadFirebaseSdk();
-        const { appMod, authMod, fsMod } = sdk;
+        const { appMod, authMod, fsMod, version } = sdk;
         const app = sdk.app || (appMod.getApps().length ? appMod.getApp() : appMod.initializeApp(window.firebaseConfig));
 
+        // Firestore est préparé tout de suite (sans réseau), pendant que la connexion anonyme se fait
         let db;
         try {
+            // « long polling » auto : évite les blocages sur les réseaux / extensions qui filtrent WebChannel
             db = fsMod.initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
         } catch (e) {
             db = fsMod.getFirestore(app);
         }
-        fb = { db, fs: fsMod, version: sdk.version };
+        fb = { db, fs: fsMod, version };
 
         let authError = null;
         try {
             const auth = authMod.getAuth(app);
+            // Session précédente restaurée en local = quasi instantané
             if (auth.authStateReady) await withTimeout(auth.authStateReady(), 5000);
             if (!auth.currentUser) await withTimeout(authMod.signInAnonymously(auth), 8000);
         } catch (e) {
@@ -333,6 +344,8 @@ async function initFirebase() {
             console.warn('Connexion anonyme impossible :', e);
         }
 
+        // Plus de test séparé : on écoute directement les 3 collections, en parallèle.
+        // Leurs premières réponses du serveur prouvent que la connexion fonctionne.
         const results = await withTimeout(Promise.all([
             listen('applications', snap => { liveApps = snap.docs.map(d => ({ ...d.data(), id: d.id })); }),
             listen('users', snap => { liveUsers = snap.docs.map(d => ({ ...d.data(), id: d.id })); }),
@@ -366,6 +379,7 @@ async function initFirebase() {
     }
 }
 
+// Lance la connexion et, en cas d'échec, réessaie toute seule (3 fois max)
 function startCloud(manual) {
     if (manual) autoRetries = 0;
     cloudReady = initFirebase()
@@ -379,6 +393,7 @@ function startCloud(manual) {
     return cloudReady;
 }
 
+// Test pas à pas de la base, affiché dans l'espace admin
 async function runDiagnostics() {
     const box = document.getElementById('dbDiagBox');
     box.classList.remove('hidden');
@@ -401,7 +416,7 @@ async function runDiagnostics() {
             sdk = await withTimeout(loadFirebaseSdk(), 25000);
             log(true, 'SDK Firebase chargé (version ' + sdk.version + ')');
         } catch (e) {
-            log(false, 'SDK Firebase non chargé : ' + ((e && e.message) || e));
+            log(false, 'SDK Firebase non chargé : ' + ((e && e.message) || e) + ' → connexion internet coupée, ou un bloqueur de publicités / pare-feu bloque gstatic.com.');
             return;
         }
 
@@ -453,6 +468,7 @@ async function waitForCloud(ms) {
     await Promise.race([cloudReady, new Promise(r => setTimeout(r, ms || 10000))]);
 }
 
+// Envoie vers la base en ligne les données qui étaient seulement sur cet appareil
 async function migrateLocalToCloud() {
     if (!useCloudDB) return;
     const localUsers = JSON.parse(safeStorage.getItem(DB_KEYS.USERS) || '[]');
@@ -485,10 +501,12 @@ async function migrateLocalToCloud() {
         safeStorage.removeItem(DB_KEYS.USERS);
         safeStorage.removeItem(DB_KEYS.APPLICATIONS);
         safeStorage.removeItem(DB_KEYS.RETRIES);
+    } else {
+        console.warn('Migration locale → base incomplète, données locales conservées.');
     }
 }
 
-// ---------- Données ----------
+// ---------- Accès aux données ----------
 function getCurrentUser() {
     return safeStorage.getItem(DB_KEYS.CURRENT_USER);
 }
@@ -557,6 +575,7 @@ function saveLocalApplication(appData) {
     safeStorage.setItem(DB_KEYS.APPLICATIONS, JSON.stringify(apps));
 }
 
+// Retourne 'cloud' ou 'local' selon l'endroit où la candidature a été enregistrée
 async function saveApplication(appData) {
     if (useCloudDB) {
         try {
@@ -679,6 +698,7 @@ function clearAuthMessages() {
     document.getElementById('authSuccess').classList.add('hidden');
 }
 
+// Mode d'authentification : 'login' ou 'register'
 let authMode = 'login';
 
 function setAuthMode(mode) {
@@ -693,31 +713,16 @@ function setAuthMode(mode) {
         title.textContent = 'Connexion requise';
         subtitle.textContent = 'Connectez-vous ou créez un compte pour soumettre votre candidature.';
         submitBtn.textContent = 'Se connecter';
-        toggleText.innerHTML = 'Pas encore de compte ? <button type="button" id="authToggleBtn" class="text-indigo-300 hover:text-indigo-200 font-medium ml-1 underline cursor-pointer">S\'inscrire</button>';
+        toggleText.innerHTML = 'Pas encore de compte ? <button type="button" id="authToggleBtn" class="text-indigo-400 hover:text-indigo-300 font-medium ml-1 underline cursor-pointer">S\'inscrire</button>';
     } else {
         title.textContent = 'Créer un compte';
         subtitle.textContent = 'Choisissez un pseudo et un mot de passe pour votre candidature.';
         submitBtn.textContent = "S'inscrire";
-        toggleText.innerHTML = 'Déjà un compte ? <button type="button" id="authToggleBtn" class="text-indigo-300 hover:text-indigo-200 font-medium ml-1 underline cursor-pointer">Se connecter</button>';
+        toggleText.innerHTML = 'Déjà un compte ? <button type="button" id="authToggleBtn" class="text-indigo-400 hover:text-indigo-300 font-medium ml-1 underline cursor-pointer">Se connecter</button>';
     }
     document.getElementById('authToggleBtn').addEventListener('click', () => {
         setAuthMode(authMode === 'login' ? 'register' : 'login');
     });
-}
-
-// Fonction pour basculer la visibilité du mot de passe
-function setupPasswordToggle() {
-    const pwdInput = document.getElementById('authPassword');
-    const toggleBtn = document.getElementById('togglePasswordBtn');
-    const toggleIcon = document.getElementById('togglePasswordIcon');
-
-    if (toggleBtn && pwdInput && toggleIcon) {
-        toggleBtn.addEventListener('click', () => {
-            const isPassword = pwdInput.type === 'password';
-            pwdInput.type = isPassword ? 'text' : 'password';
-            toggleIcon.className = isPassword ? 'fa-solid fa-eye-slash text-indigo-400' : 'fa-solid fa-eye';
-        });
-    }
 }
 
 async function handleAuthSubmit(e) {
@@ -777,12 +782,6 @@ async function handleAuthSubmit(e) {
 
 async function enterFormView(username) {
     document.getElementById('authForm').reset();
-    // Remettre le type de password à par défaut
-    const pwdInput = document.getElementById('authPassword');
-    const toggleIcon = document.getElementById('togglePasswordIcon');
-    if (pwdInput) pwdInput.type = 'password';
-    if (toggleIcon) toggleIcon.className = 'fa-solid fa-eye';
-
     clearAuthMessages();
     updateHeader();
     checkRetakeStatus(username);
@@ -855,6 +854,7 @@ async function handleModFormSubmit(e) {
 
     let where = 'local';
     try {
+        // Attente courte : si la base ne répond pas, on bascule sur le téléchargement
         if (!useCloudDB && isFirebaseConfigured()) await waitForCloud(5000);
         where = await saveApplication(appData);
     } catch (err) {
@@ -864,10 +864,11 @@ async function handleModFormSubmit(e) {
     }
 
     if (where === 'cloud') {
-        setRetry(username, false, true);
+        setRetry(username, false, true); // sans attendre : ne doit pas bloquer l'envoi
         document.getElementById('retakeNotice').classList.add('hidden');
     }
 
+    // La modale s'ouvre TOUJOURS, avec le bouton de téléchargement
     showSubmissionModal(appData, where);
     document.getElementById('modForm').reset();
     submitBtn.disabled = false;
@@ -1030,7 +1031,7 @@ function closeModal(id) {
     setTimeout(() => modal.classList.add('hidden'), 300);
 }
 
-// ---------- Espace admin ----------
+// ---------- Espace administrateur ----------
 function renderAdminApplications() {
     const apps = getApplications();
     const grid = document.getElementById('applicationsGrid');
@@ -1147,8 +1148,8 @@ function renderAdminUsers() {
 
 function setAdminTab(tab) {
     adminTab = tab;
-    const on = 'px-4 py-2 rounded-xl text-sm font-medium border cursor-pointer transition-colors bg-indigo-500/25 text-indigo-200 border-indigo-500/50 shadow-md';
-    const off = 'px-4 py-2 rounded-xl text-sm font-medium border cursor-pointer transition-colors bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700';
+    const on = 'px-4 py-2 rounded-xl text-sm font-medium border cursor-pointer transition-colors bg-indigo-500/25 text-indigo-200 border-indigo-500/50';
+    const off = 'px-4 py-2 rounded-xl text-sm font-medium border cursor-pointer transition-colors bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700';
     document.getElementById('tabAppsBtn').className = tab === 'apps' ? on : off;
     document.getElementById('tabUsersBtn').className = tab === 'users' ? on : off;
     document.getElementById('applicationsGrid').classList.toggle('hidden', tab !== 'apps');
@@ -1180,9 +1181,8 @@ function exitAdminView() {
 
 // ---------- Démarrage ----------
 document.addEventListener('DOMContentLoaded', () => {
+    // Les boutons sont branchés EN PREMIER : Firebase ne doit jamais les bloquer
     setAuthMode('login');
-    setupPasswordToggle(); // Active le bouton œil pour le mot de passe
-
     document.getElementById('authForm').addEventListener('submit', handleAuthSubmit);
     document.getElementById('modForm').addEventListener('submit', handleModFormSubmit);
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
@@ -1236,5 +1236,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showView('authView');
     }
 
+    // Firebase est lancé en arrière-plan, sans bloquer l'interface
     startCloud(true);
 });

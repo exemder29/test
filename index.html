@@ -2,52 +2,19 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Téléchargeur de fichiers - Gaming Staff</title>
-    <style>
-        body { font-family: 'Inter', sans-serif; background: #070a14; color: #f1f5f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: rgba(15, 20, 36, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 40px; border-radius: 24px; text-align: center; max-width: 450px; width: 100%; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-        h2 { margin-top: 0; color: #fff; font-size: 22px; }
-        p { color: #94a3b8; font-size: 14px; margin-bottom: 25px; }
-        button { display: block; width: 100%; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; border: none; padding: 12px; margin: 10px 0; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 600; transition: opacity 0.2s; }
-        button:hover { opacity: 0.9; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h2>Télécharger vos fichiers</h2>
-        <p>Cliquez sur chaque bouton pour télécharger directement le fichier mis à jour.</p>
-        
-        <button onclick="download('index.html', indexCode, 'text/html')">Télécharger index.html</button>
-        <button onclick="download('script.js', scriptCode, 'text/javascript')">Télécharger script.js</button>
-        <button onclick="download('style.css', styleCode, 'text/css')">Télécharger style.css</button>
-        <button onclick="download('config.js', configCode, 'text/javascript')">Télécharger config.js</button>
-        <button onclick="download('firestore-sans-auth.rules', rulesCode, 'text/plain')">Télécharger firestore-sans-auth.rules</button>
-    </div>
-
-    <script>
-        function download(filename, text, mime) {
-            const blob = new Blob([text], { type: mime + ';charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        const indexCode = `<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#070a14">
     <title>Candidature Modérateur - Gaming Staff</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <link rel="stylesheet" href="style.css">
+
+    <!-- Accélère la connexion à la base : connexions et modules Firebase préparés dès le chargement -->
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://firestore.googleapis.com">
     <link rel="preconnect" href="https://identitytoolkit.googleapis.com">
@@ -56,33 +23,45 @@
     <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js">
 </head>
 <body class="flex flex-col items-center justify-start px-4 py-5 sm:px-8 sm:py-8 relative min-h-screen">
+
+    <!-- Configuration Firebase -->
     <script src="config.js"></script>
-    <div class="aurora" aria-hidden="true"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div></div>
+
+    <!-- Fond animé -->
+    <div class="aurora" aria-hidden="true">
+        <div class="orb o1"></div>
+        <div class="orb o2"></div>
+        <div class="orb o3"></div>
+    </div>
     <div class="grid-bg" aria-hidden="true"></div>
+
+    <!-- En-tête -->
     <header class="w-full max-w-5xl flex justify-between items-center mb-8 z-20 reveal">
-        <div class="glass rounded-2xl pl-3 pr-5 py-2.5 flex items-center gap-3 border border-white/10 hover:border-indigo-500/40 transition-all shadow-lg shadow-indigo-500/10">
-            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30">
+        <div class="glass rounded-2xl pl-3 pr-5 py-2.5 flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30">
                 <i class="fa-solid fa-shield-halved text-lg"></i>
             </div>
             <div class="leading-tight">
-                <span class="text-[10px] uppercase tracking-[0.2em] text-indigo-300 font-bold block">Recrutement Staff</span>
+                <span class="text-[11px] tracking-wide text-indigo-300 font-medium block">Recrutement Staff</span>
                 <span id="headerUserDisplay" class="text-sm font-semibold text-slate-100">Non connecté</span>
             </div>
         </div>
         <div class="flex items-center gap-2 sm:gap-3">
-            <span id="dbStatusBadge" class="glass text-xs px-3.5 py-2 rounded-xl text-slate-300 flex items-center gap-2 border border-white/10" title="État de la base de données">
-                <span id="dbStatusDot" class="w-2.5 h-2.5 rounded-full pulse-dot" style="background-color:#64748b"></span>
+            <span id="dbStatusBadge" class="glass text-xs px-3.5 py-2 rounded-xl text-slate-300 flex items-center gap-2" title="État de la base de données">
+                <span id="dbStatusDot" class="w-2 h-2 rounded-full pulse-dot" style="background-color:#64748b"></span>
                 <span id="dbStatusText">Base : …</span>
             </span>
-            <button id="headerAdminBtn" type="button" class="glass px-4 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition-all hover:border-indigo-400/50 flex items-center gap-2 cursor-pointer border border-white/10">
+            <button id="headerAdminBtn" type="button" class="glass px-4 py-2 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition-all hover:border-indigo-400/50 flex items-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-lock text-indigo-400"></i>
                 <span class="hidden sm:inline">Admin</span>
             </button>
         </div>
     </header>
+
+    <!-- Hero -->
     <section id="hero" class="w-full max-w-3xl text-center mb-8 z-10">
-        <span class="reveal inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-indigo-200 bg-indigo-500/15 border border-indigo-400/30 rounded-full px-4 py-1.5 mb-5 shadow-lg shadow-indigo-500/10 backdrop-blur-md">
-            <i class="fa-solid fa-sparkles text-pink-300 animate-pulse"></i> Les recrutements sont ouverts
+        <span class="reveal inline-flex items-center gap-2 text-sm font-medium text-indigo-200 bg-indigo-500/10 border border-indigo-400/25 rounded-full px-4 py-1.5 mb-5">
+            <i class="fa-solid fa-sparkles text-pink-300"></i> Les recrutements sont ouverts
         </span>
         <h1 class="reveal d1 text-4xl sm:text-6xl font-extrabold leading-[1.08] tracking-tight mb-4">
             Deviens <span class="shimmer-text">Modérateur</span><br class="hidden sm:block"> de notre communauté
@@ -91,32 +70,40 @@
             Crée ton compte, remplis ton dossier et rejoins l'équipe Gaming Staff. Ça prend moins de cinq minutes.
         </p>
     </section>
+
+    <!-- Étapes -->
     <section id="stepsRow" class="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8 z-10">
         <div class="reveal d2 step-card glass rounded-2xl p-4 flex items-center gap-3">
-            <span class="step-num w-9 h-9 shrink-0 rounded-xl text-white font-bold flex items-center justify-center text-sm shadow-md">1</span>
+            <span class="step-num w-9 h-9 shrink-0 rounded-xl text-white font-bold flex items-center justify-center text-sm">1</span>
             <div class="leading-tight"><span class="text-sm font-semibold text-white block">Crée ton compte</span><span class="text-xs text-slate-400">Pseudo + mot de passe</span></div>
         </div>
         <div class="reveal d3 step-card glass rounded-2xl p-4 flex items-center gap-3">
-            <span class="step-num w-9 h-9 shrink-0 rounded-xl text-white font-bold flex items-center justify-center text-sm shadow-md">2</span>
+            <span class="step-num w-9 h-9 shrink-0 rounded-xl text-white font-bold flex items-center justify-center text-sm">2</span>
             <div class="leading-tight"><span class="text-sm font-semibold text-white block">Remplis ton dossier</span><span class="text-xs text-slate-400">Motivations & expérience</span></div>
         </div>
         <div class="reveal d4 step-card glass rounded-2xl p-4 flex items-center gap-3">
-            <span class="step-num w-9 h-9 shrink-0 rounded-xl text-white font-bold flex items-center justify-center text-sm shadow-md">3</span>
+            <span class="step-num w-9 h-9 shrink-0 rounded-xl text-white font-bold flex items-center justify-center text-sm">3</span>
             <div class="leading-tight"><span class="text-sm font-semibold text-white block">Donne ton code</span><span class="text-xs text-slate-400">Au staff sur Discord</span></div>
         </div>
     </section>
+
     <main class="w-full max-w-5xl z-10 flex flex-col items-center pb-10">
-        <section id="authView" class="glass card-main rounded-3xl p-6 sm:p-10 relative overflow-hidden w-full max-w-md animate-fade-in shadow-2xl">
+
+        <!-- Connexion / Inscription -->
+        <section id="authView" class="glass card-main rounded-3xl p-6 sm:p-10 relative overflow-hidden w-full max-w-md animate-fade-in">
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+
             <div class="text-center mb-7">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 text-2xl shadow-xl shadow-indigo-500/10">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-indigo-500/30 to-purple-500/30 border border-indigo-400/30 flex items-center justify-center text-indigo-200 text-2xl shadow-lg shadow-indigo-500/20">
                     <i class="fa-solid fa-user-shield"></i>
                 </div>
                 <h2 id="authTitle" class="text-2xl font-bold text-white mb-2">Connexion requise</h2>
                 <p id="authSubtitle" class="text-slate-400 text-sm">Connectez-vous ou créez un compte pour soumettre votre candidature.</p>
             </div>
+
             <div id="authError" class="mb-4 p-3 bg-red-500/15 border border-red-500/40 text-red-300 text-sm rounded-xl hidden"></div>
             <div id="authSuccess" class="mb-4 p-3 bg-green-500/15 border border-green-500/40 text-green-300 text-sm rounded-xl hidden"></div>
+
             <div data-db-notice class="mb-4 p-3 rounded-xl border text-xs flex items-start gap-2.5 border-slate-600 bg-slate-800/60 text-slate-300">
                 <i data-db-notice-icon class="fa-solid fa-circle-notch fa-spin mt-0.5"></i>
                 <div class="flex-1">
@@ -125,6 +112,7 @@
                     <button type="button" data-db-retry class="hidden mt-2 underline font-medium cursor-pointer">Réessayer maintenant</button>
                 </div>
             </div>
+
             <form id="authForm" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1.5">Nom d'utilisateur / Pseudo</label>
@@ -135,30 +123,39 @@
                         <input type="text" id="authUsername" required autocomplete="username" class="input-field w-full pl-10 pr-4 py-3 rounded-xl text-white placeholder-slate-500 text-sm" placeholder="Votre identifiant">
                     </div>
                 </div>
+
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1.5">Mot de passe</label>
                     <div class="relative input-wrap">
                         <div class="input-icon absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                             <i class="fa-solid fa-key"></i>
                         </div>
-                        <input type="password" id="authPassword" required autocomplete="current-password" class="input-field w-full pl-10 pr-11 py-3 rounded-xl text-white placeholder-slate-500 text-sm" placeholder="••••••••">
-                        <button type="button" id="togglePasswordBtn" class="password-toggle-btn absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-indigo-300 transition-colors cursor-pointer" title="Afficher/Masquer le mot de passe">
-                            <i class="fa-solid fa-eye" id="togglePasswordIcon"></i>
+                        <input type="password" id="authPassword" required autocomplete="current-password" class="input-field w-full pl-10 pr-12 py-3 rounded-xl text-white placeholder-slate-500 text-sm" placeholder="••••••••">
+                        <button type="button" class="pw-toggle" data-toggle-password="authPassword" aria-pressed="false" aria-label="Afficher le mot de passe" title="Afficher le mot de passe">
+                            <i class="fa-solid fa-eye"></i>
                         </button>
                     </div>
+                    <p id="capsHint" class="caps-hint hidden" role="status">
+                        <i class="fa-solid fa-arrow-up"></i> Verrouillage majuscules activé
+                    </p>
                 </div>
-                <button type="submit" id="authSubmitBtn" class="btn-glow w-full py-3.5 rounded-xl text-white font-semibold text-sm mt-2 cursor-pointer shadow-lg shadow-indigo-500/25">
+
+                <button type="submit" id="authSubmitBtn" class="btn-glow w-full py-3.5 rounded-xl text-white font-semibold text-sm mt-2 cursor-pointer">
                     Se connecter
                 </button>
             </form>
+
             <div class="mt-6 text-center border-t border-white/10 pt-5">
                 <p id="authToggleText" class="text-sm text-slate-400">
                     Pas encore de compte ? <button type="button" id="authToggleBtn" class="text-indigo-300 hover:text-indigo-200 font-medium ml-1 underline cursor-pointer">S'inscrire</button>
                 </p>
             </div>
         </section>
-        <section id="formView" class="glass card-main rounded-3xl p-6 sm:p-10 relative overflow-hidden w-full max-w-2xl hidden animate-fade-in shadow-2xl">
+
+        <!-- Formulaire de candidature -->
+        <section id="formView" class="glass card-main rounded-3xl p-6 sm:p-10 relative overflow-hidden w-full max-w-2xl hidden animate-fade-in">
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+
             <div class="flex justify-between items-start gap-4 mb-7">
                 <div class="flex items-center gap-4">
                     <div class="hidden sm:flex w-14 h-14 shrink-0 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white items-center justify-center text-xl shadow-lg shadow-indigo-500/30">
@@ -169,10 +166,11 @@
                         <p class="text-slate-400 text-sm">Remplissez soigneusement les champs ci-dessous.</p>
                     </div>
                 </div>
-                <button id="logoutBtn" type="button" class="shrink-0 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-300 px-3.5 py-2 rounded-xl border border-red-500/25 transition-colors flex items-center gap-1.5 cursor-pointer">
+                <button id="logoutBtn" type="button" class="shrink-0 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-300 px-3 py-2 rounded-xl border border-red-500/25 transition-colors flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="hidden sm:inline">Déconnexion</span>
                 </button>
             </div>
+
             <div id="retakeNotice" class="mb-6 p-4 bg-amber-500/15 border border-amber-500/40 text-amber-200 text-sm rounded-xl hidden flex items-start gap-3">
                 <i class="fa-solid fa-triangle-exclamation text-amber-400 text-lg mt-0.5"></i>
                 <div>
@@ -180,6 +178,7 @@
                     <span>L'administration vous a demandé de recommencer votre candidature. Veuillez soumettre un nouveau dossier ci-dessous.</span>
                 </div>
             </div>
+
             <div data-db-notice class="mb-3 p-4 rounded-xl border text-sm flex items-start gap-3 border-slate-600 bg-slate-800/60 text-slate-300">
                 <i data-db-notice-icon class="fa-solid fa-circle-notch fa-spin text-lg mt-0.5"></i>
                 <div class="flex-1">
@@ -190,55 +189,75 @@
             </div>
             <p class="mb-7 text-xs text-slate-400 flex items-start gap-2">
                 <i class="fa-solid fa-circle-info text-indigo-400 mt-0.5"></i>
-                <span><strong class="text-slate-200">Important :</strong> faites votre candidature seulement une fois connecté à la base de données.</span>
+                <span><strong class="text-slate-200">Important :</strong> faites votre candidature seulement une fois connecté à la base de données (pastille verte « Base : en ligne » en haut de la page). Si elle reste hors ligne, vous pourrez quand même télécharger votre candidature après avoir cliqué sur « Envoyer ».</span>
             </p>
+
             <form id="modForm" class="space-y-5">
                 <div class="grid sm:grid-cols-2 gap-5">
                     <div>
-                        <label for="pseudo" class="block text-sm font-medium text-slate-300 mb-1.5">Pseudo en jeu <span class="text-pink-400">*</span></label>
+                        <label for="pseudo" class="block text-sm font-medium text-slate-300 mb-1.5">
+                            Pseudo en jeu <span class="text-pink-400">*</span>
+                        </label>
                         <div class="relative input-wrap">
-                            <div class="input-icon absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500"><i class="fa-solid fa-gamepad"></i></div>
+                            <div class="input-icon absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <i class="fa-solid fa-gamepad"></i>
+                            </div>
                             <input type="text" id="pseudo" required class="input-field w-full pl-10 pr-4 py-3 rounded-xl text-white placeholder-slate-500 text-sm" placeholder="Pseudo Minecraft / Discord">
                         </div>
                     </div>
+
                     <div>
-                        <label for="playtime" class="block text-sm font-medium text-slate-300 mb-1.5">Temps de jeu & Disponibilités <span class="text-pink-400">*</span></label>
+                        <label for="playtime" class="block text-sm font-medium text-slate-300 mb-1.5">
+                            Temps de jeu & Disponibilités <span class="text-pink-400">*</span>
+                        </label>
                         <div class="relative input-wrap">
-                            <div class="input-icon absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500"><i class="fa-regular fa-clock"></i></div>
+                            <div class="input-icon absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <i class="fa-regular fa-clock"></i>
+                            </div>
                             <input type="text" id="playtime" required class="input-field w-full pl-10 pr-4 py-3 rounded-xl text-white placeholder-slate-500 text-sm" placeholder="Ex: 500h, dispo le soir">
                         </div>
                     </div>
                 </div>
+
                 <div>
                     <label for="motivations" class="block text-sm font-medium text-slate-300 mb-1.5 flex justify-between">
                         <span>Quelles sont vos motivations ? <span class="text-pink-400">*</span></span>
                         <span id="motivCount" class="text-xs text-slate-500 font-normal">0 caractère</span>
                     </label>
                     <div class="relative input-wrap">
-                        <div class="input-icon absolute top-3.5 left-3.5 text-slate-500 pointer-events-none"><i class="fa-solid fa-pen-nib"></i></div>
-                        <textarea id="motivations" rows="4" required class="input-field w-full pl-10 pr-4 py-3 rounded-xl text-white placeholder-slate-500 resize-none text-sm" placeholder="Expliquez pourquoi..."></textarea>
+                        <div class="input-icon absolute top-3.5 left-3.5 text-slate-500 pointer-events-none">
+                            <i class="fa-solid fa-pen-nib"></i>
+                        </div>
+                        <textarea id="motivations" rows="4" required class="input-field w-full pl-10 pr-4 py-3 rounded-xl text-white placeholder-slate-500 resize-none text-sm" placeholder="Expliquez pourquoi vous souhaitez rejoindre l'équipe..."></textarea>
                     </div>
                 </div>
+
                 <div>
                     <label for="experience" class="block text-sm font-medium text-slate-300 mb-1.5 flex justify-between">
                         <span>Expérience en modération <span class="text-pink-400">*</span></span>
                         <span id="expCount" class="text-xs text-slate-500 font-normal">0 caractère</span>
                     </label>
                     <div class="relative input-wrap">
-                        <div class="input-icon absolute top-3.5 left-3.5 text-slate-500 pointer-events-none"><i class="fa-solid fa-award"></i></div>
-                        <textarea id="experience" rows="3" required class="input-field w-full pl-10 pr-4 py-3 rounded-xl text-white placeholder-slate-500 resize-none text-sm" placeholder="Décrivez..."></textarea>
+                        <div class="input-icon absolute top-3.5 left-3.5 text-slate-500 pointer-events-none">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                        <textarea id="experience" rows="3" required class="input-field w-full pl-10 pr-4 py-3 rounded-xl text-white placeholder-slate-500 resize-none text-sm" placeholder="Décrivez vos anciennes expériences..."></textarea>
                     </div>
                 </div>
-                <button type="submit" id="submitFormBtn" class="btn-glow w-full py-4 rounded-xl text-white font-semibold text-sm cursor-pointer shadow-lg shadow-indigo-500/25">
+
+                <button type="submit" id="submitFormBtn" class="btn-glow w-full py-4 rounded-xl text-white font-semibold text-sm cursor-pointer">
                     <i class="fa-solid fa-paper-plane mr-2"></i> Envoyer ma candidature
                 </button>
             </form>
         </section>
-        <section id="adminView" class="glass card-main rounded-3xl p-5 sm:p-10 relative overflow-hidden w-full hidden animate-fade-in shadow-2xl">
+
+        <!-- Espace administrateur -->
+        <section id="adminView" class="glass card-main rounded-3xl p-5 sm:p-10 relative overflow-hidden w-full hidden animate-fade-in">
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500"></div>
+
             <div class="flex flex-wrap justify-between items-center gap-3 mb-6 border-b border-white/10 pb-5">
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500/30 to-red-500/30 border border-orange-400/30 text-orange-200 flex items-center justify-center text-lg shadow-lg">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500/30 to-red-500/30 border border-orange-400/30 text-orange-200 flex items-center justify-center text-lg">
                         <i class="fa-solid fa-server"></i>
                     </div>
                     <div>
@@ -247,62 +266,104 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <span id="appCountBadge" class="bg-indigo-500/20 text-indigo-200 py-2 px-3.5 rounded-xl text-sm font-semibold border border-indigo-400/30">0 Candidature(s)</span>
-                    <button id="exitAdminBtn" type="button" class="bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3.5 py-2 rounded-xl text-sm border border-slate-700 transition-colors cursor-pointer"><i class="fa-solid fa-arrow-left mr-1"></i> Quitter</button>
+                    <span id="appCountBadge" class="bg-indigo-500/20 text-indigo-200 py-2 px-3.5 rounded-xl text-sm font-semibold border border-indigo-400/30">
+                        0 Candidature(s)
+                    </span>
+                    <button id="exitAdminBtn" type="button" class="bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3.5 py-2 rounded-xl text-sm border border-slate-700 transition-colors cursor-pointer">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Quitter
+                    </button>
                 </div>
             </div>
+
             <div id="dbErrorBox" class="hidden mb-5 p-4 bg-red-500/15 border border-red-500/40 text-red-200 text-sm rounded-xl"></div>
+
             <div class="flex flex-wrap items-center gap-2 mb-5">
-                <button id="tabAppsBtn" type="button"><i class="fa-solid fa-inbox mr-1"></i> Candidatures</button>
-                <button id="tabUsersBtn" type="button"><i class="fa-solid fa-users mr-1"></i> Comptes <span id="userCountBadge" class="ml-1 text-xs opacity-80">0</span></button>
-                <button id="diagDbBtn" type="button" class="ml-auto text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl border border-slate-700 transition-colors cursor-pointer"><i class="fa-solid fa-stethoscope mr-1"></i> Tester la base</button>
-                <button id="reconnectDbBtn" type="button" class="text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl border border-slate-700 transition-colors cursor-pointer"><i class="fa-solid fa-rotate mr-1"></i> Reconnecter la base</button>
+                <button id="tabAppsBtn" type="button">
+                    <i class="fa-solid fa-inbox mr-1"></i> Candidatures
+                </button>
+                <button id="tabUsersBtn" type="button">
+                    <i class="fa-solid fa-users mr-1"></i> Comptes <span id="userCountBadge" class="ml-1 text-xs opacity-80">0</span>
+                </button>
+                <button id="diagDbBtn" type="button" class="ml-auto text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl border border-slate-700 transition-colors cursor-pointer">
+                    <i class="fa-solid fa-stethoscope mr-1"></i> Tester la base
+                </button>
+                <button id="reconnectDbBtn" type="button" class="text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl border border-slate-700 transition-colors cursor-pointer">
+                    <i class="fa-solid fa-rotate mr-1"></i> Reconnecter la base
+                </button>
             </div>
+
             <pre id="dbDiagBox" class="hidden mb-5 p-4 bg-slate-900/80 border border-slate-700 text-slate-200 text-xs rounded-xl whitespace-pre-wrap font-mono leading-relaxed"></pre>
-            <div id="applicationsGrid" class="grid grid-cols-1 gap-5 max-h-[65vh] overflow-y-auto pr-1"></div>
-            <div id="usersGrid" class="hidden grid grid-cols-1 gap-3 max-h-[65vh] overflow-y-auto pr-1"></div>
+
+            <div id="applicationsGrid" class="grid grid-cols-1 gap-5 max-h-[65vh] overflow-y-auto pr-1">
+                <!-- Cartes de candidature générées ici -->
+            </div>
+            <div id="usersGrid" class="hidden grid grid-cols-1 gap-3 max-h-[65vh] overflow-y-auto pr-1">
+                <!-- Cartes de comptes générées ici -->
+            </div>
         </section>
+
     </main>
+
     <footer class="z-10 text-xs text-slate-500 pb-4 text-center">
         <i class="fa-brands fa-discord text-indigo-400 mr-1"></i> Gaming Staff &middot; Recrutement modérateurs
     </footer>
+
+    <!-- Modale : candidature envoyée -->
     <div id="successModal" class="fixed inset-0 flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
         <div class="absolute inset-0 bg-black/75 backdrop-blur-md" id="modalOverlay"></div>
         <div class="glass card-main relative p-6 sm:p-8 rounded-3xl max-w-md w-full text-center transform scale-95 transition-transform duration-300 mx-4" id="modalContent">
-            <button id="closeModalBtn" type="button" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors cursor-pointer" title="Fermer"><i class="fa-solid fa-xmark"></i></button>
+            <button id="closeModalBtn" type="button" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors cursor-pointer" title="Fermer">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
             <div id="modalIcon" class="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/30 shadow-lg">
                 <i id="modalIconI" class="fa-solid fa-check text-2xl"></i>
             </div>
             <h3 id="modalTitle" class="text-2xl font-bold text-white mb-2">Candidature envoyée !</h3>
             <p id="modalSubtitle" class="text-slate-300 text-sm mb-5">Votre dossier a bien été enregistré. Conservez votre code unique :</p>
+
             <div class="bg-slate-950/70 p-4 rounded-2xl border border-indigo-400/30 mb-4 flex items-center justify-between gap-3">
                 <div class="text-left">
                     <span class="text-[11px] text-slate-400 block uppercase font-semibold tracking-wider">Votre Code Unique</span>
                     <span id="modalUniqueCode" class="text-3xl font-extrabold font-mono tracking-[0.18em] text-gradient">-----</span>
                 </div>
-                <button id="copyCodeBtn" type="button" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-md">
+                <button id="copyCodeBtn" type="button" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-regular fa-copy"></i> Copier
                 </button>
             </div>
+
             <div class="p-3 bg-amber-500/15 border border-amber-500/30 rounded-xl text-amber-300 text-xs mb-5 text-left flex items-start gap-2">
                 <i class="fa-solid fa-triangle-exclamation text-amber-400 mt-0.5"></i>
-                <span><strong>Important :</strong> Retenez bien ce code !</span>
+                <span><strong>Important :</strong> Retenez bien ce code ! Il vous sera demandé par le staff sur Discord.</span>
             </div>
+
             <div id="modalDbWarning" class="hidden p-3 bg-red-500/15 border border-red-500/30 rounded-xl text-red-300 text-xs mb-4 text-left"></div>
+
             <button id="downloadAppBtn" type="button" class="btn-glow w-full py-3 rounded-xl text-white font-medium text-sm cursor-pointer flex items-center justify-center gap-2">
                 <i class="fa-solid fa-download"></i> Télécharger ma candidature
             </button>
+            <p class="text-slate-400 text-xs mt-3">Une belle fiche récap va être téléchargée : ouvrez-la puis envoyez-la (ou une capture) sur le Discord.</p>
         </div>
     </div>
+
+    <!-- Modale : mot de passe admin -->
     <div id="adminLoginModal" class="fixed inset-0 flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
         <div class="absolute inset-0 bg-black/75 backdrop-blur-md" id="adminModalOverlay"></div>
         <div class="glass card-main relative p-6 sm:p-8 rounded-3xl max-w-sm w-full text-center transform scale-95 transition-transform duration-300 mx-4">
-            <div class="w-14 h-14 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/30 shadow-lg"><i class="fa-solid fa-lock text-xl"></i></div>
+            <div class="w-14 h-14 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/30">
+                <i class="fa-solid fa-lock text-xl"></i>
+            </div>
             <h3 class="text-xl font-bold text-white mb-2">Sécurité Administrateur</h3>
             <p class="text-slate-300 text-xs mb-4">Entrez le code d'accès administrateur.</p>
+
             <div id="adminLoginError" class="text-red-400 text-xs mb-3 hidden">Code incorrect</div>
+
             <form id="adminLoginForm" class="space-y-4">
-                <input type="password" id="adminPinInput" required placeholder="Mot de passe admin" class="input-field w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 text-sm text-center font-mono">
+                <div class="relative input-wrap">
+                    <input type="password" id="adminPinInput" required placeholder="Mot de passe admin" class="input-field w-full px-12 py-3 rounded-xl text-white placeholder-slate-500 text-sm text-center font-mono">
+                    <button type="button" class="pw-toggle" data-toggle-password="adminPinInput" aria-pressed="false" aria-label="Afficher le mot de passe" title="Afficher le mot de passe">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
                 <div class="flex gap-2">
                     <button type="button" id="cancelAdminBtn" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm transition-colors cursor-pointer">Annuler</button>
                     <button type="submit" class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">Valider</button>
@@ -310,7 +371,13 @@
             </form>
         </div>
     </div>
+
+    <!-- Firebase SDK (CDN) : équivalent web du code npm fourni, avec la nouvelle configuration -->
     <script type="module">
+      // Import the functions you need from the SDKs you need (version CDN)
+      // Chargement en parallèle et SANS bloquer la page : les boutons restent utilisables pendant la connexion.
+      // Your web app's Firebase configuration
+      // For Firebase JS SDK v7.20.0 and later, measurementId is optional
       const firebaseConfig = {
         apiKey: "AIzaSyBsvy6kLvebvLf7q6W2y1-rM82FehEb1OY",
         authDomain: "feo-candidature.firebaseapp.com",
@@ -321,59 +388,42 @@
         measurementId: "G-V5FJS5R4SZ"
       };
       const base = "https://www.gstatic.com/firebasejs/13.0.0/";
+
       window.firebasePreload = (async () => {
         const [appMod, authMod, fsMod] = await Promise.all([
           import(base + "firebase-app.js"),
           import(base + "firebase-auth.js"),
           import(base + "firebase-firestore.js")
         ]);
+        // Initialize Firebase
         const app = appMod.getApps().length ? appMod.getApp() : appMod.initializeApp(firebaseConfig);
-        import(base + "firebase-analytics.js").then(a => a.isSupported().then(ok => { if (ok) a.getAnalytics(app); })).catch(() => {});
+
+        // Analytics : chargé à part, en arrière-plan. S'il est bloqué (bloqueur de pub), la base n'est pas affectée.
+        import(base + "firebase-analytics.js")
+          .then(a => a.isSupported().then(ok => { if (ok) a.getAnalytics(app); }))
+          .catch(() => {});
+
         return { appMod, authMod, fsMod, app, version: "13.0.0" };
       })();
+      window.firebasePreload.catch(e => console.warn("Préchargement Firebase échoué :", e));
     </script>
+
     <script src="script.js"></script>
-</body>
-</html>`;
+    <script src="effects.js"></script>
 
-        const scriptCode = `// Script principal mis à jour
-function setupPasswordToggle() {
-    const pwdInput = document.getElementById('authPassword');
-    const toggleBtn = document.getElementById('togglePasswordBtn');
-    const toggleIcon = document.getElementById('togglePasswordIcon');
-    if (toggleBtn && pwdInput && toggleIcon) {
-        toggleBtn.addEventListener('click', () => {
-            const isPassword = pwdInput.type === 'password';
-            pwdInput.type = isPassword ? 'text' : 'password';
-            toggleIcon.className = isPassword ? 'fa-solid fa-eye-slash text-indigo-400' : 'fa-solid fa-eye';
-        });
-    }
-}
-document.addEventListener('DOMContentLoaded', () => { setupPasswordToggle(); });`;
-
-        const styleCode = `:root { --bg: #070a14; --surface: rgba(15, 20, 36, 0.72); }
-body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #f1f5f9; }
-.password-toggle-btn { user-select: none; }
-.password-toggle-btn:hover { transform: scale(1.1); }`;
-
-        const configCode = `window.firebaseConfig = {
-    apiKey: "AIzaSyBsvy6kLvebvLf7q6W2y1-rM82FehEb1OY",
-    authDomain: "feo-candidature.firebaseapp.com",
-    projectId: "feo-candidature",
-    storageBucket: "feo-candidature.firebasestorage.app",
-    messagingSenderId: "112851096087",
-    appId: "1:112851096087:web:1a7ca1df98426750d74252",
-    measurementId: "G-V5FJS5R4SZ"
-};`;
-
-        const rulesCode = `rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /artifacts/mod-app-v3/public/data/{collection}/{docId} {
-      allow read, write: if true;
-    }
-  }
-}`;
+    <!-- Petits compteurs de caractères (purement visuels) -->
+    <script>
+      (function () {
+        function bind(inputId, counterId) {
+          var input = document.getElementById(inputId), out = document.getElementById(counterId);
+          if (!input || !out) return;
+          var update = function () { var n = input.value.length; out.textContent = n + (n > 1 ? ' caractères' : ' caractère'); };
+          input.addEventListener('input', update);
+          document.getElementById('modForm').addEventListener('reset', function () { setTimeout(update, 0); });
+        }
+        bind('motivations', 'motivCount');
+        bind('experience', 'expCount');
+      })();
     </script>
 </body>
 </html>
