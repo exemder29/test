@@ -1120,7 +1120,7 @@ function renderAdminApplications() {
     document.getElementById('appCountBadge').textContent = apps.length + ' Candidature(s)';
 
     if (apps.length === 0) {
-        grid.innerHTML = '<div class="text-center text-slate-400 text-sm py-10"><i class="fa-solid fa-inbox text-3xl mb-3 block"></i>Aucune candidature reçue pour le moment.</div>';
+        grid.innerHTML = '<div class="text-center text-slate-400 text-sm py-10"><i class="fa-solid fa-inbox text-3xl mb-3 block"></i>Aucune candidature reçue pour le moment.<br><span class="text-xs text-slate-500">Les boutons « Marquer comme lu » et « Commentaire » apparaissent sur chaque candidature dès qu\'une est reçue.</span></div>';
         return;
     }
 
