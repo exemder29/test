@@ -596,3 +596,16 @@ footer::before {
 .recruit-bar.is-closed .recruit-btn { color: #a7f3d0; background: rgba(52, 211, 153, 0.16); border-color: rgba(52, 211, 153, 0.5); }
 .recruit-bar.is-closed .recruit-btn:hover { background: rgba(52, 211, 153, 0.3); }
 .recruit-btn:disabled { opacity: .65; cursor: wait; transform: none; }
+
+/* Tant que la base n'a pas répondu : on n'affiche ni « ouvert » ni formulaire */
+.checking-note {
+    display: none; align-items: center; gap: .75rem; margin-bottom: 1.5rem; padding: 1rem 1.2rem;
+    border-radius: 1.1rem; font-size: .88rem; color: #cbd5e1;
+    background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.3);
+}
+.checking-note i { color: #fcd34d; }
+.recruitment-checking .checking-note { display: flex; }
+.recruitment-checking #modForm,
+.recruitment-checking #dossierStrip { display: none !important; }
+.recruitment-checking .cta { visibility: hidden; }
+.recruitment-checking .live-dot { background: #fbbf24; box-shadow: 0 0 10px 2px rgba(251, 191, 36, 0.7); }

@@ -54,6 +54,8 @@ let liveApps = [];
 let liveUsers = [];
 let liveRetries = {};
 let liveClosed = false;      // candidatures fermées par l'admin (état en ligne)
+let cloudClosedKnown = false; // true dès que la base a répondu pour ce réglage
+let recruitmentKnown = false; // false tant qu'on ne sait pas si c'est ouvert ou fermé (évite d'afficher « ouvert » à tort)
 let lastAppData = null;
 let cloudReady = Promise.resolve();
 let adminTab = 'apps';
@@ -360,6 +362,8 @@ async function initFirebase() {
                     if (d.id === SETTINGS_DOC) { liveClosed = !!d.data().closed; return; }
                     liveRetries[d.id] = !!d.data().requested;
                 });
+                cloudClosedKnown = true;   // la base a répondu : liveClosed est fiable (même si le doc n'existe pas = ouvert)
+                recruitmentKnown = true;
             })
         ]), 10000).catch(e => {
             dbIssue = explainCloudError(authError || e);
@@ -384,6 +388,11 @@ async function initFirebase() {
         setDbStatus('error');
     } finally {
         connecting = false;
+        // Connexion terminée (réussie ou non) : on sait ce qu'on peut afficher, et on redessine la page
+        recruitmentKnown = true;
+        applyRecruitmentState();
+        refreshRetakeNotice();
+        refreshAdminIfOpen();
     }
 }
 
@@ -660,7 +669,7 @@ async function setRetry(username, val, silent) {
 const SETTINGS_DOC = 'site%settings';
 
 function isRecruitmentClosed() {
-    return useCloudDB ? liveClosed : safeStorage.getItem(DB_KEYS.CLOSED) === '1';
+    return cloudClosedKnown ? liveClosed : safeStorage.getItem(DB_KEYS.CLOSED) === '1';
 }
 
 async function setRecruitmentClosed(closed) {
@@ -671,19 +680,22 @@ async function setRecruitmentClosed(closed) {
             updatedAt: new Date().toISOString()
         }), 10000);
         liveClosed = !!closed;
-    } else if (closed) {
-        safeStorage.setItem(DB_KEYS.CLOSED, '1');
     } else {
-        safeStorage.removeItem(DB_KEYS.CLOSED);
+        if (closed) safeStorage.setItem(DB_KEYS.CLOSED, '1');
+        else safeStorage.removeItem(DB_KEYS.CLOSED);
+        if (cloudClosedKnown) liveClosed = !!closed;
     }
 }
 
 // Applique l'état sur toute la page : la classe du <body> pilote l'affichage (voir style.css)
 function applyRecruitmentState() {
     const closed = isRecruitmentClosed();
-    document.body.classList.toggle('recruitment-closed', closed);
+    document.body.classList.toggle('recruitment-checking', !recruitmentKnown);
+    document.body.classList.toggle('recruitment-closed', recruitmentKnown && closed);
     const badge = document.getElementById('heroBadgeText');
-    if (badge) badge.textContent = closed ? 'Les recrutements sont fermés' : 'Les recrutements sont ouverts';
+    if (badge) badge.textContent = !recruitmentKnown
+        ? 'Vérification des recrutements…'
+        : (closed ? 'Les recrutements sont fermés' : 'Les recrutements sont ouverts');
 }
 
 function renderRecruitmentControl() {
@@ -976,6 +988,10 @@ function showSubmissionModal(appData, where) {
 
 async function handleModFormSubmit(e) {
     e.preventDefault();
+    if (!recruitmentKnown) {
+        alert('Vérification en cours, réessaie dans une seconde.');
+        return;
+    }
     if (isRecruitmentClosed()) {
         applyRecruitmentState();
         alert('Les candidatures sont fermées pour le moment.');
