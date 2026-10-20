@@ -655,7 +655,9 @@ async function setRetry(username, val, silent) {
 }
 
 // ---------- Ouverture / fermeture des candidatures ----------
-const SETTINGS_DOC = '__settings__';   // document réservé dans la collection « retries »
+// Document réservé dans la collection « retries ». Firestore interdit les ids du type __xxx__ ;
+// « site%settings » ne peut jamais être la clé d'un utilisateur (un « % » est toujours suivi de 2 chiffres hexa).
+const SETTINGS_DOC = 'site%settings';
 
 function isRecruitmentClosed() {
     return useCloudDB ? liveClosed : safeStorage.getItem(DB_KEYS.CLOSED) === '1';
