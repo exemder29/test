@@ -34,7 +34,8 @@ const DB_KEYS = {
     USERS: 'mod_users_v3',
     CURRENT_USER: 'mod_current_user_v3',
     APPLICATIONS: 'mod_applications_v3',
-    RETRIES: 'mod_retries_v3'
+    RETRIES: 'mod_retries_v3',
+    CLOSED: 'mod_closed_v3'
 };
 
 const APP_ID = 'mod-app-v3';
@@ -52,6 +53,7 @@ let unsubs = [];
 let liveApps = [];
 let liveUsers = [];
 let liveRetries = {};
+let liveClosed = false;      // candidatures fermées par l'admin (état en ligne)
 let lastAppData = null;
 let cloudReady = Promise.resolve();
 let adminTab = 'apps';
@@ -352,7 +354,12 @@ async function initFirebase() {
             listen('users', snap => { liveUsers = snap.docs.map(d => ({ ...d.data(), id: d.id })); }),
             listen('retries', snap => {
                 liveRetries = {};
-                snap.docs.forEach(d => { liveRetries[d.id] = !!d.data().requested; });
+                liveClosed = false;
+                snap.docs.forEach(d => {
+                    // document réservé : réglage « candidatures fermées » (stocké ici pour ne pas ajouter de collection)
+                    if (d.id === SETTINGS_DOC) { liveClosed = !!d.data().closed; return; }
+                    liveRetries[d.id] = !!d.data().requested;
+                });
             })
         ]), 10000).catch(e => {
             dbIssue = explainCloudError(authError || e);
@@ -647,6 +654,67 @@ async function setRetry(username, val, silent) {
     }
 }
 
+// ---------- Ouverture / fermeture des candidatures ----------
+const SETTINGS_DOC = '__settings__';   // document réservé dans la collection « retries »
+
+function isRecruitmentClosed() {
+    return useCloudDB ? liveClosed : safeStorage.getItem(DB_KEYS.CLOSED) === '1';
+}
+
+async function setRecruitmentClosed(closed) {
+    if (useCloudDB) {
+        await withTimeout(fb.fs.setDoc(cloudDoc('retries', SETTINGS_DOC), {
+            closed: !!closed,
+            requested: false,
+            updatedAt: new Date().toISOString()
+        }), 10000);
+        liveClosed = !!closed;
+    } else if (closed) {
+        safeStorage.setItem(DB_KEYS.CLOSED, '1');
+    } else {
+        safeStorage.removeItem(DB_KEYS.CLOSED);
+    }
+}
+
+// Applique l'état sur toute la page : la classe du <body> pilote l'affichage (voir style.css)
+function applyRecruitmentState() {
+    const closed = isRecruitmentClosed();
+    document.body.classList.toggle('recruitment-closed', closed);
+    const badge = document.getElementById('heroBadgeText');
+    if (badge) badge.textContent = closed ? 'Les recrutements sont fermés' : 'Les recrutements sont ouverts';
+}
+
+function renderRecruitmentControl() {
+    const btn = document.getElementById('toggleRecruitmentBtn');
+    if (!btn) return;
+    const closed = isRecruitmentClosed();
+    document.getElementById('recruitmentBar').classList.toggle('is-closed', closed);
+    document.getElementById('recruitTitle').textContent = closed ? 'Candidatures fermées' : 'Candidatures ouvertes';
+    let hint = closed
+        ? 'Plus personne ne peut envoyer de dossier. Les candidats déjà inscrits voient toujours leur dossier et tes commentaires.'
+        : 'Les visiteurs peuvent envoyer leur candidature.';
+    if (!useCloudDB) hint += ' Base hors ligne : ce réglage ne vaut que sur cet appareil.';
+    document.getElementById('recruitHint').textContent = hint;
+    btn.innerHTML = closed
+        ? '<i class="fa-solid fa-lock-open"></i> Rouvrir les candidatures'
+        : '<i class="fa-solid fa-lock"></i> Fermer les candidatures';
+}
+
+async function handleToggleRecruitment() {
+    const btn = document.getElementById('toggleRecruitmentBtn');
+    const willClose = !isRecruitmentClosed();
+    if (willClose && !confirm('Fermer les candidatures ?\n\nPlus personne ne pourra envoyer de dossier tant que tu ne les rouvres pas.')) return;
+    btn.disabled = true;
+    try {
+        await setRecruitmentClosed(willClose);
+    } catch (e) {
+        alert('Action impossible : ' + explainCloudError(e));
+    }
+    btn.disabled = false;
+    applyRecruitmentState();
+    renderAdmin();
+}
+
 // ---------- Suivi du dossier : « lu » + commentaire de l'équipe ----------
 // Ces infos sont enregistrées dans le document de la candidature (readAt, adminComment, adminCommentAt).
 // Un nouvel envoi de dossier remplace le document : le suivi repart donc à zéro.
@@ -751,6 +819,7 @@ function checkRetakeStatus(username) {
 }
 
 function refreshRetakeNotice() {
+    applyRecruitmentState();
     const cu = getCurrentUser();
     if (cu) checkRetakeStatus(cu);
 }
@@ -905,6 +974,11 @@ function showSubmissionModal(appData, where) {
 
 async function handleModFormSubmit(e) {
     e.preventDefault();
+    if (isRecruitmentClosed()) {
+        applyRecruitmentState();
+        alert('Les candidatures sont fermées pour le moment.');
+        return;
+    }
     const username = getCurrentUser();
     if (!username) {
         showView('authView');
@@ -1279,6 +1353,7 @@ function setAdminTab(tab) {
 
 function renderAdmin() {
     renderDbIssue();
+    renderRecruitmentControl();
     renderAdminApplications();
     renderAdminUsers();
 }
@@ -1321,6 +1396,9 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerHTML = '<i class="fa-solid fa-check"></i> Copié';
         setTimeout(() => { btn.innerHTML = original; }, 1500);
     });
+
+    document.getElementById('toggleRecruitmentBtn').addEventListener('click', handleToggleRecruitment);
+    applyRecruitmentState();
 
     document.getElementById('headerAdminBtn').addEventListener('click', () => {
         document.getElementById('adminPinInput').value = '';
