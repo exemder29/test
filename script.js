@@ -1237,6 +1237,7 @@ async function verifyAdminPin(pin) {
         return { ok: true };
     } catch (e) {
         const code = String((e && e.code) || '');
+        console.warn('Vérification admin refusée :', e);
         if (/permission-denied/i.test(code)) return { ok: false, reason: 'wrong' };
         return { ok: false, reason: 'error', message: explainCloudError(e) };
     }
@@ -1491,7 +1492,9 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal('adminLoginModal');
             enterAdminView();
         } else {
-            errBox.textContent = res.reason === 'wrong' ? 'Code incorrect' : res.message;
+            errBox.textContent = res.reason === 'wrong'
+                ? 'Code refusé par Firestore (permission-denied). Si le code est bon : règles non publiées, ou document « adminConfig » absent / mal rempli.'
+                : res.message;
             errBox.classList.remove('hidden');
         }
     });
