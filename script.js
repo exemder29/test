@@ -1492,9 +1492,8 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal('adminLoginModal');
             enterAdminView();
         } else {
-            errBox.textContent = res.reason === 'wrong'
-                ? 'Code refusé par Firestore (permission-denied). Si le code est bon : règles non publiées, ou document « adminConfig » absent / mal rempli.'
-                : res.message;
+            if (res.message) console.warn('Admin :', res.message);
+            errBox.textContent = res.reason === 'wrong' ? 'Code incorrect' : 'Connexion impossible, réessaie.';
             errBox.classList.remove('hidden');
         }
     });
