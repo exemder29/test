@@ -40,7 +40,6 @@ const DB_KEYS = {
 
 const APP_ID = 'mod-app-v3';
 const FIREBASE_VERSIONS = ['13.0.0', '11.6.1'];
-const ADMIN_PIN = 'EZ85//';
 // Copie locale des comptes déjà connus : permet de se connecter même si la base est coupée plus tard
 const USER_CACHE_KEY = 'mod_users_cache_v3';
 
@@ -341,6 +340,8 @@ async function initFirebase() {
         let authError = null;
         try {
             const auth = authMod.getAuth(app);
+            fb.auth = auth;
+            fb.authMod = authMod;
             // Session précédente restaurée en local = quasi instantané
             if (auth.authStateReady) await withTimeout(auth.authStateReady(), 5000);
             if (!auth.currentUser) await withTimeout(authMod.signInAnonymously(auth), 8000);
@@ -673,17 +674,21 @@ function isRecruitmentClosed() {
 }
 
 async function setRecruitmentClosed(closed) {
-    if (useCloudDB) {
+    if (fb) {
+        // On écrit TOUJOURS dans la base en ligne dès qu'elle est initialisée (même si le voyant dit « hors ligne »),
+        // sinon le bot Discord et les autres visiteurs ne verraient jamais le changement.
         await withTimeout(fb.fs.setDoc(cloudDoc('retries', SETTINGS_DOC), {
             closed: !!closed,
             requested: false,
             updatedAt: new Date().toISOString()
         }), 10000);
         liveClosed = !!closed;
+        cloudClosedKnown = true;
+        safeStorage.removeItem(DB_KEYS.CLOSED);
     } else {
+        // Pas de base du tout (aucune config Firebase) : réglage local à cet appareil
         if (closed) safeStorage.setItem(DB_KEYS.CLOSED, '1');
         else safeStorage.removeItem(DB_KEYS.CLOSED);
-        if (cloudClosedKnown) liveClosed = !!closed;
     }
 }
 
@@ -1200,6 +1205,50 @@ function closeModal(id) {
     setTimeout(() => modal.classList.add('hidden'), 300);
 }
 
+// ---------- Accès administrateur (code vérifié par Firestore, jamais dans ce fichier) ----------
+// Le code n'existe NULLE PART dans le site. Seule son empreinte (SHA-256) est stockée dans
+// artifacts/mod-app-v3/private/adminConfig (champ « pinHash »), un document que personne ne peut lire
+// depuis le navigateur (voir firestore.rules). Pour entrer, le navigateur tente de créer
+// artifacts/mod-app-v3/adminSessions/<son uid> en y mettant l'empreinte du code tapé : les règles
+// Firestore n'acceptent l'écriture que si elle est identique à celle du document secret.
+function hashAdminPin(pin) {
+    return 'sha256:' + sha256Hex('mod-admin-v1:' + pin);
+}
+
+function adminSessionRef() {
+    return fb.fs.doc(fb.db, 'artifacts', APP_ID, 'adminSessions', fb.auth.currentUser.uid);
+}
+
+// Retourne { ok: true } ou { ok: false, reason: 'wrong' | 'offline' | 'error', message }
+async function verifyAdminPin(pin) {
+    if (!isFirebaseConfigured()) {
+        return { ok: false, reason: 'offline', message: 'Aucune configuration Firebase : impossible de vérifier le code.' };
+    }
+    if (!fb) await waitForCloud(10000);
+    if (!fb || !fb.auth) {
+        return { ok: false, reason: 'offline', message: 'Base de données non connectée. ' + (dbIssue || 'Réessaie dans un instant.') };
+    }
+    try {
+        if (!fb.auth.currentUser) await withTimeout(fb.authMod.signInAnonymously(fb.auth), 8000);
+        await withTimeout(fb.fs.setDoc(adminSessionRef(), {
+            pinHash: hashAdminPin(pin),
+            at: new Date().toISOString()
+        }), 10000);
+        return { ok: true };
+    } catch (e) {
+        const code = String((e && e.code) || '');
+        if (/permission-denied/i.test(code)) return { ok: false, reason: 'wrong' };
+        return { ok: false, reason: 'error', message: explainCloudError(e) };
+    }
+}
+
+// À l'écran de sortie : on retire la session admin côté base
+async function revokeAdminSession() {
+    try {
+        if (fb && fb.auth && fb.auth.currentUser) await withTimeout(fb.fs.deleteDoc(adminSessionRef()), 6000);
+    } catch (e) { console.warn('Session admin non supprimée :', e); }
+}
+
 // ---------- Espace administrateur ----------
 function renderAdminApplications() {
     const apps = getApplications();
@@ -1388,6 +1437,7 @@ function enterAdminView() {
 }
 
 function exitAdminView() {
+    revokeAdminSession();
     const user = getCurrentUser();
     showView(user ? 'formView' : 'authView');
     if (user) checkRetakeStatus(user);
@@ -1425,15 +1475,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('cancelAdminBtn').addEventListener('click', () => closeModal('adminLoginModal'));
     document.getElementById('adminModalOverlay').addEventListener('click', () => closeModal('adminLoginModal'));
-    document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
+    document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const pin = document.getElementById('adminPinInput').value;
-        if (pin === ADMIN_PIN) {
-            document.getElementById('adminLoginError').classList.add('hidden');
+        const errBox = document.getElementById('adminLoginError');
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const label = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        errBox.classList.add('hidden');
+        const res = await verifyAdminPin(pin);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = label;
+        if (res.ok) {
             closeModal('adminLoginModal');
             enterAdminView();
         } else {
-            document.getElementById('adminLoginError').classList.remove('hidden');
+            errBox.textContent = res.reason === 'wrong' ? 'Code incorrect' : res.message;
+            errBox.classList.remove('hidden');
         }
     });
     document.getElementById('exitAdminBtn').addEventListener('click', exitAdminView);
