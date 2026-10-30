@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KayroBot – Espace admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+  // Adresse propre : /kayrobot.fr/ au lieu de /kayrobot.fr/index.html (et sans .html pour les autres pages)
+  (function () {
+    var p = location.pathname.replace(/index\.html$/, '').replace(/\.html$/, '');
+    if (p !== location.pathname) history.replaceState(null, '', p + location.search + location.hash);
+  })();
+</script>
+</head>
+<body>
+  <main class="center-screen">
+
+    <!-- Vérification du code admin -->
+    <section id="auth-modal" class="login-card">
+      <div class="logo" aria-hidden="true"><i class="fa-solid fa-shield-halved" style="font-size:22px"></i></div>
+      <div>
+        <h1>Espace admin</h1>
+        <p class="lead">Entre le code administrateur pour continuer.</p>
+      </div>
+      <div class="stack">
+        <label class="field">
+          <span>Code administrateur</span>
+          <input type="password" id="admin-code-input" class="input" placeholder="Code secret" autocomplete="current-password">
+        </label>
+        <button onclick="verifyAdminCode()" class="btn btn-primary">Vérifier le code</button>
+        <p id="auth-error" class="notice error hidden">Code incorrect. Réessaie.</p>
+        <a href="./" class="fine">Retour à l'accueil</a>
+      </div>
+    </section>
+
+    <!-- Panneau admin (visible après validation du code) -->
+    <section id="admin-panel" class="login-card hidden">
+      <div class="logo" aria-hidden="true"><i class="fa-solid fa-key" style="font-size:22px"></i></div>
+      <div>
+        <h1>Configuration</h1>
+        <p class="lead">Accès administrateur validé.</p>
+      </div>
+      <div class="notice">Le token du bot est gardé en secret sur le Worker Cloudflare. Pour le changer, modifie la variable <b>BOT_TOKEN</b> dans Cloudflare.</div>
+      <div class="stack">
+        <a href="dashboard" class="btn btn-primary">Ouvrir le tableau de bord</a>
+        <button onclick="logoutAdmin()" class="btn btn-ghost"><i class="fa-solid fa-lock"></i> Verrouiller</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>

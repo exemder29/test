@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KayroBot – Tableau de bord</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="shell">
+
+  <!-- Barre latérale -->
+  <aside class="rail">
+    <div class="brand">
+      <img class="logo-img" src="logo.png" alt="" width="38" height="38">
+      <strong>KayroBot</strong>
+    </div>
+
+    <button id="server-switch" class="server-switch" onclick="switchTab('servers')" title="Changer de serveur">
+      <img id="rail-guild-icon" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="">
+      <span>
+        <span class="name" id="selected-guild-label">Aucun serveur</span>
+        <span class="hint">Changer de serveur</span>
+      </span>
+    </button>
+
+    <nav class="nav" aria-label="Navigation principale">
+      <button id="nav-overview" class="nav-btn" onclick="switchTab('overview')"><i class="fa-solid fa-gauge-high"></i><span>Vue d'ensemble</span></button>
+      <button id="nav-servers" class="nav-btn active" onclick="switchTab('servers')"><i class="fa-solid fa-server"></i><span>Mes serveurs</span></button>
+      <button id="nav-categories" class="nav-btn" onclick="switchTab('categories')"><i class="fa-solid fa-terminal"></i><span>Commandes</span></button>
+      <button id="nav-settings" class="nav-btn" onclick="switchTab('settings')"><i class="fa-solid fa-heart-pulse"></i><span>État du bot</span></button>
+    </nav>
+
+    <div class="rail-foot">
+      <a class="btn btn-ok btn-block" href="https://discord.com/oauth2/authorize?client_id=1563284812351938611&permissions=8&integration_type=0&scope=bot+applications.commands" target="_blank" rel="noopener">
+        <i class="fa-solid fa-plus"></i> Ajouter le bot
+      </a>
+      <div class="user-chip">
+        <img id="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="">
+        <span id="user-display-name">Chargement…</span>
+        <button id="btn-logout" class="icon-btn" title="Se déconnecter" aria-label="Se déconnecter"><i class="fa-solid fa-right-from-bracket"></i></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Contenu -->
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h2 id="page-title">Mes serveurs</h2>
+        <p id="page-sub">Choisis le serveur à gérer.</p>
+      </div>
+      <div class="chips">
+        <span id="active-server-badge" class="chip plain hidden"></span>
+        <span id="bot-chip" class="chip">Vérification du bot…</span>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- Vue d'ensemble -->
+      <section id="tab-overview" class="tab-content hidden">
+        <div id="ov-empty" class="empty">
+          <strong>Aucun serveur sélectionné</strong>
+          <p>Choisis un serveur pour voir ses chiffres et l'historique de tes actions.</p>
+          <button class="btn btn-primary" onclick="switchTab('servers')">Choisir un serveur</button>
+        </div>
+
+        <div id="ov-body" class="hidden" style="display:grid;gap:28px">
+          <div class="overview-head">
+            <img id="ov-icon" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="">
+            <div>
+              <h3 id="ov-name">—</h3>
+              <p id="ov-meta">Chargement des chiffres…</p>
+            </div>
+          </div>
+
+          <div class="overview-grid">
+            <div class="stack">
+              <div class="section-head"><h3>Actions rapides</h3></div>
+              <div class="quick">
+                <button onclick="goCommand('messages')"><i class="fa-solid fa-comment-dots"></i><span><strong>Envoyer un message</strong><small>Fais parler le bot dans un salon</small></span></button>
+                <button onclick="goCommand('messages')"><i class="fa-solid fa-rectangle-list"></i><span><strong>Poster un embed</strong><small>Annonce avec titre, texte et couleur</small></span></button>
+                <button onclick="goCommand('salons')"><i class="fa-solid fa-lock"></i><span><strong>Verrouiller un salon</strong><small>Empêche tout le monde d'écrire</small></span></button>
+                <button onclick="goCommand('moderation')"><i class="fa-solid fa-gavel"></i><span><strong>Sanctionner un membre</strong><small>Bannir, expulser ou mettre en sourdine</small></span></button>
+              </div>
+            </div>
+
+            <div class="stack">
+              <div class="section-head">
+                <div><h3>Journal des actions</h3><p>Ce que tu as lancé depuis ce site, sur ce navigateur.</p></div>
+                <button class="btn btn-ghost btn-small" onclick="clearJournal()">Vider</button>
+              </div>
+              <div class="journal" id="journal"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Serveurs -->
+      <section id="tab-servers" class="tab-content">
+        <div class="section-head">
+          <div>
+            <h3>Tes serveurs</h3>
+            <p>Seuls les serveurs où tu es administrateur apparaissent.</p>
+          </div>
+          <div class="row" style="flex:none;min-width:min(380px,100%)">
+            <input id="guild-search" class="input" type="search" placeholder="Rechercher un serveur" aria-label="Rechercher un serveur">
+            <button id="btn-refresh-guilds" class="btn btn-ghost" style="flex:none"><i class="fa-solid fa-rotate"></i> Actualiser</button>
+          </div>
+        </div>
+        <div id="guilds-loading" class="empty"><i class="fa-solid fa-circle-notch fa-spin"></i><p>Chargement de tes serveurs…</p></div>
+        <div id="guilds-container" class="guild-grid hidden"></div>
+        <p id="guilds-extra" class="hidden" style="margin-top:14px"><button id="btn-show-absent" class="btn btn-ghost btn-small" type="button"></button></p>
+        <details id="diag" style="margin-top:18px"><summary class="fine" style="cursor:pointer">Diagnostic de la détection du bot</summary><pre id="diag-out" class="fine" style="white-space:pre-wrap;word-break:break-word;margin-top:8px"></pre></details>
+      </section>
+
+      <!-- Commandes -->
+      <section id="tab-categories" class="tab-content hidden">
+        <div id="cmd-warning" class="note hidden"></div>
+        <div class="console">
+
+          <div class="cat-list" role="tablist" aria-label="Catégories de commandes">
+            <button onclick="switchCategory('moderation')" id="cat-btn-moderation" class="category-btn active"><i class="fa-solid fa-gavel"></i><span><strong>Modération</strong><small>Sanctions</small></span></button>
+            <button onclick="switchCategory('messages')" id="cat-btn-messages" class="category-btn"><i class="fa-solid fa-comments"></i><span><strong>Messages</strong><small>Texte et embeds</small></span></button>
+            <button onclick="switchCategory('salons')" id="cat-btn-salons" class="category-btn"><i class="fa-solid fa-hashtag"></i><span><strong>Salons</strong><small>Purge, lent, verrou</small></span></button>
+            <button onclick="switchCategory('roles')" id="cat-btn-roles" class="category-btn"><i class="fa-solid fa-user-shield"></i><span><strong>Rôles</strong><small>Créer et attribuer</small></span></button>
+            <button onclick="switchCategory('tickets')" id="cat-btn-tickets" class="category-btn"><i class="fa-solid fa-ticket"></i><span><strong>Tickets</strong><small>Panneau d'accueil</small></span></button>
+            <button onclick="switchCategory('infos')" id="cat-btn-infos" class="category-btn"><i class="fa-solid fa-circle-info"></i><span><strong>Infos</strong><small>Latence, stats</small></span></button>
+          </div>
+
+          <div>
+            <!-- Modération -->
+            <div id="category-moderation" class="cmd-category-content">
+              <div class="cmd-grid">
+                <article class="cmd sev-high">
+                  <header><h4>Bannir</h4><p>Retire un membre du serveur. Il reçoit un message privé avec la raison.</p></header>
+                  <label class="field"><span>ID du membre</span><input type="text" id="ban-user" class="input" placeholder="123456789012345678" inputmode="numeric"></label>
+                  <label class="field"><span>Messages à effacer</span>
+                    <select id="ban-delete-days" class="input">
+                      <option value="0">Garder ses messages</option>
+                      <option value="1">Effacer les dernières 24 h</option>
+                      <option value="7">Effacer les 7 derniers jours</option>
+                    </select>
+                  </label>
+                  <label class="field"><span>Raison</span><input type="text" id="ban-reason" class="input" placeholder="Ex. spam répété"></label>
+                  <button onclick="executeBotCommand('bannir')" class="btn btn-danger btn-block">Bannir le membre</button>
+                </article>
+
+                <article class="cmd sev-mid">
+                  <header><h4>Mettre en sourdine</h4><p>Empêche un membre d'écrire et de parler pendant un temps donné (28 jours maximum).</p></header>
+                  <label class="field"><span>ID du membre</span><input type="text" id="timeout-user" class="input" placeholder="123456789012345678" inputmode="numeric"></label>
+                  <div class="row">
+                    <label class="field"><span>Durée</span><input type="number" id="timeout-duration" class="input" placeholder="10" min="1"></label>
+                    <label class="field"><span>Unité</span>
+                      <select id="timeout-unit" class="input"><option value="m">Minutes</option><option value="h">Heures</option><option value="d">Jours</option></select>
+                    </label>
+                  </div>
+                  <label class="field"><span>Raison</span><input type="text" id="timeout-reason" class="input" placeholder="Ex. insultes"></label>
+                  <button onclick="executeBotCommand('sourdine')" class="btn btn-warn btn-block">Mettre en sourdine</button>
+                </article>
+
+                <article class="cmd sev-mid">
+                  <header><h4>Expulser</h4><p>Retire le membre, qui peut revenir avec une nouvelle invitation.</p></header>
+                  <label class="field"><span>ID du membre</span><input type="text" id="kick-user" class="input" placeholder="123456789012345678" inputmode="numeric"></label>
+                  <label class="field"><span>Raison</span><input type="text" id="kick-reason" class="input" placeholder="Ex. pub non autorisée"></label>
+                  <button onclick="executeBotCommand('expulser')" class="btn btn-warn btn-block">Expulser le membre</button>
+                </article>
+
+                <article class="cmd sev-mid">
+                  <header><h4>Avertir</h4><p>Enregistre un avertissement et prévient le membre. Au troisième, sourdine automatique d'une heure.</p></header>
+                  <label class="field"><span>ID du membre</span><input type="text" id="warn-user" class="input" placeholder="123456789012345678" inputmode="numeric"></label><label class="field"><span>Raison</span><input type="text" id="warn-reason" class="input" placeholder="Ex. insultes"></label>
+                  <button onclick="executeBotCommand('avertir')" class="btn btn-warn btn-block">Avertir le membre</button>
+                </article>
+
+                <article class="cmd ">
+                  <header><h4>Voir les avertissements</h4><p>Affiche les derniers avertissements d'un membre.</p></header>
+                  <label class="field"><span>ID du membre</span><input type="text" id="warns-user" class="input" placeholder="123456789012345678" inputmode="numeric"></label>
+                  <button onclick="executeBotCommand('avertissements')" class="btn btn-primary btn-block">Afficher</button>
+                </article>
+
+                <article class="cmd sev-mid">
+                  <header><h4>Effacer les avertissements</h4><p>Remet le compteur d'un membre à zéro.</p></header>
+                  <label class="field"><span>ID du membre</span><input type="text" id="clearwarns-user" class="input" placeholder="123456789012345678" inputmode="numeric"></label>
+                  <button onclick="executeBotCommand('effacer-avertissements')" class="btn btn-warn btn-block">Effacer</button>
+                </article>
+
+                <article class="cmd sev-ok">
+                  <header><h4>Débannir</h4><p>Lève le bannissement à partir de l'ID de l'utilisateur.</p></header>
+                  <label class="field"><span>ID de l'utilisateur</span><input type="text" id="unban-user" class="input" placeholder="123456789012345678" inputmode="numeric"></label><label class="field"><span>Raison</span><input type="text" id="unban-reason" class="input" placeholder="Ex. appel accepté"></label>
+                  <button onclick="executeBotCommand('debannir')" class="btn btn-ok btn-block">Débannir</button>
+                </article>
+
+                <article class="cmd sev-ok">
+                  <header><h4>Retirer la sourdine</h4><p>Rend la parole à un membre en sourdine.</p></header>
+                  <label class="field"><span>ID du membre</span><input type="text" id="untimeout-user" class="input" placeholder="123456789012345678" inputmode="numeric"></label>
+                  <button onclick="executeBotCommand('fin-sourdine')" class="btn btn-ok btn-block">Retirer la sourdine</button>
+                </article>
+
+                <article class="cmd sev-mid">
+                  <header><h4>Déconnecter du vocal</h4><p>Fait sortir un membre de son salon vocal.</p></header>
+                  <label class="field"><span>ID du membre</span><input type="text" id="vdisc-user" class="input" placeholder="123456789012345678" inputmode="numeric"></label>
+                  <button onclick="executeBotCommand('deconnecter')" class="btn btn-warn btn-block">Déconnecter</button>
+                </article>
+
+                <article class="cmd ">
+                  <header><h4>Déplacer en vocal</h4><p>Envoie un membre connecté dans un autre salon vocal.</p></header>
+                  <label class="field"><span>ID du membre</span><input type="text" id="vmove-user" class="input" placeholder="123456789012345678" inputmode="numeric"></label><label class="field"><span>Salon vocal</span><select id="vmove-channel" class="guild-voice-dropdown input"><option value="">Choisis un salon vocal</option></select></label>
+                  <button onclick="executeBotCommand('deplacer')" class="btn btn-primary btn-block">Déplacer</button>
+                </article>
+              </div>
+            </div>
+
+            <!-- Messages -->
+            <div id="category-messages" class="cmd-category-content hidden">
+              <div class="cmd-grid">
+                <article class="cmd">
+                  <header><h4>Envoyer un message</h4><p>Le bot écrit à ta place. Écris <b>\n</b> pour passer à la ligne.</p></header>
+                  <div class="picker">
+                    <span class="fine">Salon</span>
+                    <input type="text" class="input search" placeholder="Rechercher un salon" oninput="filterChannels(this, 'say-channel-select')" aria-label="Rechercher un salon">
+                    <select id="say-channel-select" class="guild-channels-dropdown input"><option value="">Choisis un salon</option></select>
+                  </div>
+                  <label class="field"><span>Message</span><textarea id="say-msg" class="input" rows="3" placeholder="Écris ton message"></textarea></label>
+                  <button onclick="executeBotCommand('say')" class="btn btn-primary btn-block">Envoyer le message</button>
+                </article>
+
+                <article class="cmd sev-ok">
+                  <header><h4>Poster un embed</h4><p>Une annonce mise en forme, avec une barre de couleur.</p></header>
+                  <div class="picker">
+                    <span class="fine">Salon</span>
+                    <input type="text" class="input search" placeholder="Rechercher un salon" oninput="filterChannels(this, 'embed-channel-select')" aria-label="Rechercher un salon">
+                    <select id="embed-channel-select" class="guild-channels-dropdown input"><option value="">Choisis un salon</option></select>
+                  </div>
+                  <label class="field"><span>Titre</span><input type="text" id="embed-title" class="input" placeholder="Titre de l'annonce"></label>
+                  <label class="field"><span>Texte</span><textarea id="embed-desc" class="input" rows="3" placeholder="Contenu de l'annonce"></textarea></label>
+                  <label class="field"><span>Couleur</span><input type="color" id="embed-color" class="input" value="#8b93ff"></label>
+                  <button onclick="executeBotCommand('embed')" class="btn btn-ok btn-block">Poster l'embed</button>
+                </article>
+                <article class="cmd sev-ok">
+                  <header><h4>Programmer un message</h4><p>Le bot publie le message à la date et l'heure choisies (heure de Paris).</p></header>
+                  <div class="picker">
+                    <span class="fine">Salon</span>
+                    <input type="text" class="input search" placeholder="Rechercher un salon" oninput="filterChannels(this, 'prog-channel-select')" aria-label="Rechercher un salon">
+                    <select id="prog-channel-select" class="guild-channels-dropdown input"><option value="">Choisis un salon</option></select>
+                  </div><label class="field"><span>Message</span><textarea id="prog-msg" class="input" rows="3" placeholder="Écris ton message"></textarea></label><div class="row"><label class="field"><span>Date</span><input type="date" id="prog-date" class="input"></label><label class="field"><span>Heure</span><input type="time" id="prog-time" class="input"></label></div>
+                  <button onclick="executeBotCommand('programmer')" class="btn btn-primary btn-block">Programmer</button>
+                </article>
+
+                <article class="cmd ">
+                  <header><h4>Messages programmés</h4><p>Liste ceux du serveur, ou annule-en un avec son ID.</p></header>
+                  <label class="field"><span>ID à annuler (facultatif)</span><input type="text" id="prog-cancel-id" class="input" placeholder="Ex. mvu042rt"></label><div class="row"><button onclick="executeBotCommand('programmations')" class="btn btn-ghost btn-block">Voir la liste</button><button onclick="executeBotCommand('annuler-programmation')" class="btn btn-warn btn-block">Annuler</button></div>
+                </article>
+
+                <article class="cmd ">
+                  <header><h4>Rappel de bump</h4><p>Un rappel toutes les 2 heures dans le salon choisi.</p></header>
+                  <div class="picker">
+                    <span class="fine">Salon</span>
+                    <input type="text" class="input search" placeholder="Rechercher un salon" oninput="filterChannels(this, 'bump-channel-select')" aria-label="Rechercher un salon">
+                    <select id="bump-channel-select" class="guild-channels-dropdown input"><option value="">Choisis un salon</option></select>
+                  </div><label class="field"><span>Rôle à mentionner (facultatif)</span><select id="bump-role-select" class="guild-roles-dropdown input"><option value="">Choisis un rôle</option></select></label><div class="row"><button onclick="executeBotCommand('bump-activer')" class="btn btn-ok btn-block">Activer</button><button onclick="executeBotCommand('bump-desactiver')" class="btn btn-warn btn-block">Arrêter</button></div><button onclick="executeBotCommand('bump-statut')" class="btn btn-ghost btn-block">Voir le statut</button>
+                </article>
+
+                <article class="cmd ">
+                  <header><h4>Apparence du bot</h4><p>Change le nom et la photo du bot dans ses messages (pas son vrai profil).</p></header>
+                  <label class="field"><span>Nom affiché</span><input type="text" id="look-name" class="input" placeholder="Ex. Assistant"></label><label class="field"><span>Lien de la photo (https://…)</span><input type="text" id="look-image" class="input" placeholder="https://…"></label><div class="row"><button onclick="executeBotCommand('apparence')" class="btn btn-primary btn-block">Enregistrer</button><button onclick="executeBotCommand('apparence-reset')" class="btn btn-ghost btn-block">Réinitialiser</button></div>
+                </article>
+              </div>
+            </div>
+
+            <!-- Salons -->
+            <div id="category-salons" class="cmd-category-content hidden">
+              <div class="cmd-grid">
+                <article class="cmd sev-mid">
+                  <header><h4>Nettoyer un salon</h4><p>Supprime les derniers messages. Discord ignore ceux de plus de 14 jours.</p></header>
+                  <div class="picker">
+                    <span class="fine">Salon</span>
+                    <input type="text" class="input search" placeholder="Rechercher un salon" oninput="filterChannels(this, 'clear-channel-select')" aria-label="Rechercher un salon">
+                    <select id="clear-channel-select" class="guild-channels-dropdown input"><option value="">Choisis un salon</option></select>
+                  </div>
+                  <label class="field"><span>Nombre de messages (1 à 100)</span><input type="number" id="clear-count" class="input" placeholder="20" min="1" max="100"></label>
+                  <button onclick="executeBotCommand('nettoyer')" class="btn btn-warn btn-block">Supprimer les messages</button>
+                </article>
+
+                <article class="cmd">
+                  <header><h4>Mode lent</h4><p>Impose un délai entre deux messages d'un même membre.</p></header>
+                  <div class="picker">
+                    <span class="fine">Salon</span>
+                    <input type="text" class="input search" placeholder="Rechercher un salon" oninput="filterChannels(this, 'slowmode-channel-select')" aria-label="Rechercher un salon">
+                    <select id="slowmode-channel-select" class="guild-channels-dropdown input"><option value="">Choisis un salon</option></select>
+                  </div>
+                  <label class="field"><span>Délai en secondes (0 pour désactiver)</span><input type="number" id="slowmode-sec" class="input" placeholder="10" min="0" max="21600"></label>
+                  <button onclick="executeBotCommand('mode-lent')" class="btn btn-primary btn-block">Appliquer le mode lent</button>
+                </article>
+
+                <article class="cmd sev-mid">
+                  <header><h4>Verrouiller un salon</h4><p>Retire le droit d'écrire à tout le monde, ou le rend.</p></header>
+                  <div class="picker">
+                    <span class="fine">Salon</span>
+                    <input type="text" class="input search" placeholder="Rechercher un salon" oninput="filterChannels(this, 'lock-channel-select')" aria-label="Rechercher un salon">
+                    <select id="lock-channel-select" class="guild-channels-dropdown input"><option value="">Choisis un salon</option></select>
+                  </div>
+                  <div class="row">
+                    <button onclick="executeBotCommand('verrouiller')" class="btn btn-warn"><i class="fa-solid fa-lock"></i> Verrouiller</button>
+                    <button onclick="executeBotCommand('deverrouiller')" class="btn btn-ok"><i class="fa-solid fa-lock-open"></i> Déverrouiller</button>
+                  </div>
+                </article>
+
+                <article class="cmd">
+                  <header><h4>Structure du serveur</h4></header>
+                  <p class="note">À lancer dans Discord avec <b>/serveur</b> : le bot garde la liste de ce qu'il crée pour pouvoir l'annuler avec <b>/serveur-annuler</b>.</p>
+                </article>
+              </div>
+            </div>
+
+            <!-- Rôles -->
+            <div id="category-roles" class="cmd-category-content hidden">
+              <div class="cmd-grid">
+                <article class="cmd sev-ok">
+                  <header><h4>Créer un rôle</h4><p>Le rôle est créé sans permission particulière.</p></header>
+                  <label class="field"><span>Nom du rôle</span><input type="text" id="role-create-name" class="input" placeholder="Ex. Membre vérifié"></label>
+                  <label class="field"><span>Couleur</span><input type="color" id="role-create-color" class="input" value="#8b93ff"></label>
+                  <button onclick="executeBotCommand('role-creer')" class="btn btn-ok btn-block">Créer le rôle</button>
+                </article>
+
+                <article class="cmd">
+                  <header><h4>Donner ou retirer un rôle</h4><p>Le rôle du bot doit être placé plus haut que celui-ci.</p></header>
+                  <label class="field"><span>ID du membre</span><input type="text" id="role-member-id" class="input" placeholder="123456789012345678" inputmode="numeric"></label>
+                  <label class="field"><span>ID du rôle</span><input type="text" id="role-target-id" class="input" placeholder="123456789012345678" inputmode="numeric"></label>
+                  <div class="row">
+                    <button onclick="executeBotCommand('role-ajouter')" class="btn btn-ok">Donner</button>
+                    <button onclick="executeBotCommand('role-retirer')" class="btn btn-danger">Retirer</button>
+                  </div>
+                </article>
+                <article class="cmd ">
+                  <header><h4>Modifier un rôle</h4><p>Change le nom ou la couleur d'un rôle.</p></header>
+                  <label class="field"><span>Rôle</span><select id="rolemod-select" class="guild-roles-dropdown input"><option value="">Choisis un rôle</option></select></label><label class="field"><span>Nouveau nom (facultatif)</span><input type="text" id="rolemod-name" class="input" placeholder=""></label><label class="field"><span>Nouvelle couleur</span><input type="color" id="rolemod-color" class="input" value="#5865f2"></label><label class="field"><span><input type="checkbox" id="rolemod-usecolor"> Changer la couleur</span></label>
+                  <button onclick="executeBotCommand('role-modifier')" class="btn btn-primary btn-block">Modifier le rôle</button>
+                </article>
+
+                <article class="cmd sev-high">
+                  <header><h4>Supprimer un rôle</h4><p>Supprime définitivement un rôle du serveur.</p></header>
+                  <label class="field"><span>Rôle</span><select id="roledel-select" class="guild-roles-dropdown input"><option value="">Choisis un rôle</option></select></label>
+                  <button onclick="executeBotCommand('role-supprimer')" class="btn btn-danger btn-block">Supprimer le rôle</button>
+                </article>
+
+                <article class="cmd ">
+                  <header><h4>Remplacer un rôle</h4><p>Retire un rôle à un membre et lui donne l'autre.</p></header>
+                  <label class="field"><span>ID du membre</span><input type="text" id="rolerep-member" class="input" placeholder="123456789012345678" inputmode="numeric"></label><label class="field"><span>Rôle à retirer</span><select id="rolerep-old" class="guild-roles-dropdown input"><option value="">Choisis un rôle</option></select></label><label class="field"><span>Rôle à donner</span><select id="rolerep-new" class="guild-roles-dropdown input"><option value="">Choisis un rôle</option></select></label>
+                  <button onclick="executeBotCommand('role-remplacer')" class="btn btn-primary btn-block">Remplacer</button>
+                </article>
+
+                <article class="cmd ">
+                  <header><h4>Voir les rôles</h4><p>Liste les rôles du serveur.</p></header>
+                  
+                  <button onclick="executeBotCommand('role-voir')" class="btn btn-ghost btn-block">Afficher les rôles</button>
+                </article>
+              </div>
+            </div>
+
+            <!-- Tickets -->
+            <div id="category-tickets" class="cmd-category-content hidden">
+              <div class="cmd-grid">
+                <article class="cmd sev-ok">
+                  <header><h4>Configuration</h4><p>Équivalent de <b>/ticket config</b> : salon des demandes, rôle du staff et catégorie. Le bot lit la même configuration.</p></header>
+                  <label class="field"><span>Salon des demandes</span><select id="tcfg-channel" class="input"><option value="">Choisis un salon</option></select></label>
+                  <label class="field"><span>Rôle du staff</span><select id="tcfg-role" class="input"><option value="">Choisis un rôle</option></select></label>
+                  <label class="field"><span>Catégorie des tickets</span><select id="tcfg-category" class="input"><option value="">Aucune catégorie</option></select></label>
+                  <p class="fine" id="ticket-cfg-status">Choisis un serveur pour voir sa configuration.</p>
+                  <button onclick="saveTicketConfig()" class="btn btn-ok btn-block">Enregistrer la configuration</button>
+                </article>
+
+                <article class="cmd sev-ok">
+                  <header><h4>Ajouter des types de ticket</h4><p>Équivalent de <b>/ticket option-ajouter</b>. Sépare plusieurs noms par des virgules, et mets un emoji devant si tu veux (ex. 🛠️ Support, 🤝 Partenariat).</p></header>
+                  <label class="field"><span>Nom(s) à ajouter</span><input type="text" id="topt-add" class="input" placeholder="🛠️ Support, 🤝 Partenariat"></label>
+                  <button onclick="executeBotCommand('ticket-option-ajouter')" class="btn btn-ok btn-block">Ajouter</button>
+                </article>
+
+                <article class="cmd sev-mid">
+                  <header><h4>Retirer un type de ticket</h4><p>Équivalent de <b>/ticket option-retirer</b>. La liste vient de la configuration actuelle.</p></header>
+                  <label class="field"><span>Type à retirer</span><select id="topt-remove-select" class="input"><option value="">Choisis un type</option></select></label>
+                  <button onclick="executeBotCommand('ticket-option-retirer')" class="btn btn-warn btn-block">Retirer</button>
+                </article>
+
+                <article class="cmd">
+                  <header><h4>Types de ticket actuels</h4><p>Équivalent de <b>/ticket options</b>. Sans type, le panneau affiche un simple bouton « Créer un ticket ».</p></header>
+                  <button onclick="executeBotCommand('ticket-options')" class="btn btn-ghost btn-block">Afficher la liste</button>
+                </article>
+
+                <article class="cmd">
+                  <header><h4>Questions du formulaire</h4><p>Équivalent de <b>/ticket questions</b>. Une question par ligne, 5 au maximum, 45 caractères chacune.</p></header>
+                  <label class="field"><span>Questions</span><textarea id="tcfg-questions" class="input" rows="4" placeholder="Quel est ton pseudo ?&#10;Que veux-tu demander ?"></textarea></label>
+                  <div class="row">
+                    <button onclick="executeBotCommand('ticket-questions')" class="btn btn-ok btn-block">Enregistrer</button>
+                    <button onclick="executeBotCommand('ticket-questions-defaut')" class="btn btn-ghost btn-block">Question par défaut</button>
+                  </div>
+                </article>
+
+                <article class="cmd sev-ok">
+                  <header><h4>Poster le panneau</h4><p>Message avec un bouton pour ouvrir un ticket. Enregistre d'abord la configuration ci-contre, sinon le bouton répondra que rien n'est configuré.</p></header>
+                  <div class="picker">
+                    <span class="fine">Salon d'affichage</span>
+                    <input type="text" class="input search" placeholder="Rechercher un salon" oninput="filterChannels(this, 'ticket-panel-channel-select')" aria-label="Rechercher un salon">
+                    <select id="ticket-panel-channel-select" class="guild-channels-dropdown input"><option value="">Choisis un salon</option></select>
+                  </div>
+                  <label class="field"><span>Titre du panneau</span><input type="text" id="ticket-panel-title" class="input" placeholder="🎫 Support"></label>
+                  <button onclick="executeBotCommand('ticket-panneau')" class="btn btn-ok btn-block">Poster le panneau</button>
+                </article>
+              </div>
+            </div>
+
+            <!-- Infos -->
+            <div id="category-infos" class="cmd-category-content hidden">
+              <div class="cmd-grid">
+                <article class="cmd">
+                  <header><h4>Latence</h4><p>Mesure le temps de réponse entre le site et Discord.</p></header>
+                  <button onclick="executeBotCommand('ping')" class="btn btn-primary btn-block">Tester la latence</button>
+                </article>
+
+                <article class="cmd">
+                  <header><h4>Statistiques du serveur</h4><p>Poste dans un salon le nombre de membres, de personnes en ligne et de rôles.</p></header>
+                  <div class="picker">
+                    <span class="fine">Salon</span>
+                    <input type="text" class="input search" placeholder="Rechercher un salon" oninput="filterChannels(this, 'info-channel-select')" aria-label="Rechercher un salon">
+                    <select id="info-channel-select" class="guild-channels-dropdown input"><option value="">Choisis un salon</option></select>
+                  </div>
+                  <button onclick="executeBotCommand('infos-serveur')" class="btn btn-primary btn-block">Poster les statistiques</button>
+                </article>
+                <article class="cmd ">
+                  <header><h4>Infos d'un membre</h4><p>Date de création du compte, arrivée sur le serveur et rôles.</p></header>
+                  <label class="field"><span>ID du membre</span><input type="text" id="minfo-user" class="input" placeholder="123456789012345678" inputmode="numeric"></label>
+                  <button onclick="executeBotCommand('infos-membre')" class="btn btn-primary btn-block">Afficher</button>
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="command-reference">
+          <div class="reference-heading"><span class="reference-icon"><i class="fa-solid fa-book-open"></i></span><div><strong>Commandes Discord complémentaires</strong><p>À lancer directement dans Discord lorsque tu en as besoin.</p></div></div>
+          <div class="reference-grid">
+            <div><code>/serveur-annuler</code><span>Annule la structure créée par <b>/serveur</b>. Aucune option obligatoire.</span></div>
+            <div><code>/infos-serveur</code><span>Affiche les informations principales du serveur. Aucune option obligatoire.</span></div>
+            <div><code>/aide</code><span>Affiche la liste des commandes. Aucune option obligatoire.</span></div>
+            <div><code>/aide-plus</code><span>Affiche une explication pour chaque commande. Aucune option obligatoire.</span></div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- État du bot -->
+      <section id="tab-settings" class="tab-content hidden">
+        <div class="cmd" style="max-width:640px">
+          <header>
+            <h4>Connexion au bot</h4>
+            <p>Le token du bot reste en secret sur le Worker Cloudflare. Il n'est jamais envoyé au navigateur ni affiché ici.</p>
+          </header>
+          <div id="token-state" class="fine">Vérification en cours…</div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div id="toasts" aria-live="polite"></div>
+
+<div id="confirm-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div class="modal-box">
+    <h3 id="confirm-title">Confirmer</h3>
+    <p id="confirm-text"></p>
+    <div class="modal-actions">
+      <button id="confirm-no" class="btn btn-ghost">Annuler</button>
+      <button id="confirm-yes" class="btn btn-danger">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>
