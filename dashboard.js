@@ -22,7 +22,7 @@ function proxyConfigured() {
 }
 
 // ---------- Connexion Discord : mémorisée, renouvelée en silence ----------
-const REDIRECT_URI = 'https://exemder29.github.io/kayrobot.fr/dashboard.html';
+const REDIRECT_URI = 'https://exemder29.github.io/test/dashboard.html';
 const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 const authUrl = silent =>
   `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify%20guilds${silent ? '&prompt=none' : ''}`;
